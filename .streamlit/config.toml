@@ -1,9 +1,7 @@
 [theme]
-# 다크모드 지원을 위한 테마 설정
+# 시스템 테마 자동 인식 (라이트/다크 모드)
+base = "light"  # 기본값은 light, 사용자 시스템 설정에 따라 자동 전환
 primaryColor = "#3498DB"
-backgroundColor = "#0E1117"
-secondaryBackgroundColor = "#262730"
-textColor = "#FAFAFA"
 font = "sans serif"
 
 [browser]
