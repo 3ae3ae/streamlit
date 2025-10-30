@@ -1,0 +1,10 @@
+[theme]
+# 다크모드 지원을 위한 테마 설정
+primaryColor = "#3498DB"
+backgroundColor = "#0E1117"
+secondaryBackgroundColor = "#262730"
+textColor = "#FAFAFA"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false
