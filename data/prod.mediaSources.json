@@ -1,0 +1,629 @@
+[{
+  "_id": "chosun",
+  "name": "조선일보",
+  "perspective": "right",
+  "description": "대한민국의 대표적인 보수 언론",
+  "websiteUrl": "https://www.chosun.com",
+  "foundedYear": 1920,
+  "ownershipInfo": "조선미디어그룹",
+  "createdAt": {
+    "$date": "2025-05-27T00:00:00.000Z"
+  },
+  "category_list": [
+    {
+      "name": "politics",
+      "url": "https://www.chosun.com/politics/"
+    },
+    {
+      "name": "society",
+      "url": "https://www.chosun.com/national/"
+    },
+    {
+      "name": "international",
+      "url": "https://www.chosun.com/international/"
+    },
+    {
+      "name": "economy",
+      "url": "https://www.chosun.com/economy/"
+    }
+  ],
+  "aiEvaluatedPerspective": "right",
+  "expertEvaluatedPerspective": "right",
+  "logoUrl": "https://play-lh.googleusercontent.com/wfUX6_I4zpw4D6k7N4SI2FNq9yiYL8y1qwCUv3oJOfIvyMxHqe6b3zBuJuTLKa43Sz6o"
+},
+{
+  "_id": "mbn",
+  "name": "MBN",
+  "perspective": "right",
+  "description": "매일방송",
+  "websiteUrl": "https://www.mbn.co.kr",
+  "foundedYear": 2008,
+  "ownershipInfo": "매일방송",
+  "createdAt": {
+    "$date": "2025-05-27T00:00:00.000Z"
+  },
+  "category_list": [
+    {
+      "name": "politics",
+      "url": "https://www.mbn.co.kr/news/politics/"
+    },
+    {
+      "name": "society",
+      "url": "https://www.mbn.co.kr/news/society/"
+    },
+    {
+      "name": "economy",
+      "url": "https://www.mbn.co.kr/news/economy/"
+    },
+    {
+      "name": "international",
+      "url": "https://www.mbn.co.kr/news/world/"
+    },
+    {
+      "name": "culture",
+      "url": "https://www.mbn.co.kr/news/culture/"
+    }
+  ],
+  "aiEvaluatedPerspective": "right",
+  "expertEvaluatedPerspective": "right",
+  "logoUrl": "https://play-lh.googleusercontent.com/SG_fyMJzFK5ptofEGD6-_C3H9orwufZCea6xadbZH2KRBJ-DgvLRshwRuKyVFUkTtSw"
+},
+{
+  "_id": "kbs",
+  "name": "KBS",
+  "perspective": "center",
+  "description": "대한민국의 공영방송",
+  "websiteUrl": "https://www.kbs.co.kr",
+  "foundedYear": 1927,
+  "ownershipInfo": "한국방송공사",
+  "createdAt": {
+    "$date": "2025-05-27T00:00:00.000Z"
+  },
+  "category_list": [
+    {
+      "name": "politics",
+      "url": "https://news.kbs.co.kr/news/pc/category/category.do?ctcd=0003"
+    },
+    {
+      "name": "economy",
+      "url": "https://news.kbs.co.kr/news/pc/category/category.do?ctcd=0004"
+    },
+    {
+      "name": "international",
+      "url": "https://news.kbs.co.kr/news/pc/category/category.do?ctcd=0006"
+    },
+    {
+      "name": "technology",
+      "url": "https://news.kbs.co.kr/news/pc/category/category.do?ctcd=0007"
+    },
+    {
+      "name": "culture",
+      "url": "https://news.kbs.co.kr/news/pc/category/category.do?ctcd=0008"
+    },
+    {
+      "name": "society",
+      "url": "https://news.kbs.co.kr/news/pc/category/category.do?ctcd=0005"
+    }
+  ],
+  "aiEvaluatedPerspective": "center",
+  "expertEvaluatedPerspective": "center",
+  "logoUrl": "https://play-lh.googleusercontent.com/gGmIE5gtfniYCiDjomvILsTw1ix7_XZ3HDYoH9W1x3xjklu7_XrIYri2U1XSBGjErbs"
+},
+{
+  "_id": "yna",
+  "name": "연합뉴스",
+  "perspective": "center",
+  "description": "대한민국의 대표 통신사",
+  "websiteUrl": "https://www.yna.co.kr",
+  "foundedYear": 1980,
+  "ownershipInfo": "연합뉴스",
+  "createdAt": {
+    "$date": "2025-05-27T00:00:00.000Z"
+  },
+  "category_list": [
+    {
+      "name": "politics",
+      "url": "https://www.yna.co.kr/politics/all"
+    },
+    {
+      "name": "society",
+      "url": "https://www.yna.co.kr/society/all"
+    },
+    {
+      "name": "economy",
+      "url": "https://www.yna.co.kr/economy/all"
+    },
+    {
+      "name": "international",
+      "url": "https://www.yna.co.kr/international/all"
+    },
+    {
+      "name": "culture",
+      "url": "https://www.yna.co.kr/culture/all"
+    }
+  ],
+  "aiEvaluatedPerspective": "center_right",
+  "expertEvaluatedPerspective": "center",
+  "logoUrl": "https://play-lh.googleusercontent.com/1iUgrNC9PtEe-ny4TjE9RG4P_M93teWeD98GG58wWt9cGbNhmDWEiUnHd41g8Zp16I2j"
+},
+{
+  "_id": "channel_a",
+  "name": "채널A",
+  "perspective": "right",
+  "description": "종합편성채널",
+  "websiteUrl": "https://www.ichannela.com",
+  "foundedYear": 2011,
+  "ownershipInfo": "동아미디어그룹",
+  "createdAt": {
+    "$date": "2025-05-27T00:00:00.000Z"
+  },
+  "category_list": [
+    {
+      "name": "politics",
+      "url": "https://ichannela.com/news/main/news_part.do?catecode=000401"
+    },
+    {
+      "name": "society",
+      "url": "https://ichannela.com/news/main/news_part.do?catecode=000404"
+    },
+    {
+      "name": "economy",
+      "url": "https://ichannela.com/news/main/news_part.do?catecode=000402"
+    },
+    {
+      "name": "international",
+      "url": "https://ichannela.com/news/main/news_part.do?catecode=000403"
+    },
+    {
+      "name": "culture",
+      "url": "https://ichannela.com/news/main/news_part.do?catecode=000405"
+    }
+  ],
+  "aiEvaluatedPerspective": "right",
+  "expertEvaluatedPerspective": "right",
+  "logoUrl": "https://i.namu.wiki/i/-t7WFKNhZo-T2AH9CCywbuKvzMnJjIKMF4OmmIRxI1NOYuMSdrtWM6ymypDd0c5tmxmBT8d2kCBX1aoVdWjSXw.webp"
+},
+{
+  "_id": "hani",
+  "name": "한겨례",
+  "perspective": "left",
+  "description": "조간 일간지",
+  "websiteUrl": "https://www.hani.co.kr",
+  "foundedYear": 1988,
+  "ownershipInfo": "한겨례신문사",
+  "createdAt": {
+    "$date": "2025-05-27T00:00:00.000Z"
+  },
+  "category_list": [
+    {
+      "url": "https://www.hani.co.kr/arti/politics",
+      "name": "politics"
+    },
+    {
+      "url": "https://www.hani.co.kr/arti/society",
+      "name": "society"
+    },
+    {
+      "url": "https://www.hani.co.kr/arti/economy",
+      "name": "economy"
+    },
+    {
+      "url": "https://www.hani.co.kr/arti/international",
+      "name": "international"
+    },
+    {
+      "url": "https://www.hani.co.kr/arti/culture",
+      "name": "culture"
+    },
+    {
+      "url": "https://www.hani.co.kr/arti/science",
+      "name": "technology"
+    }
+  ],
+  "aiEvaluatedPerspective": "left",
+  "expertEvaluatedPerspective": "left",
+  "logoUrl": "https://play-lh.googleusercontent.com/h0imjKTcy_Jv8-VMTzGclssesfypSt03mZdz1jcnjFXPCa6-_jbXkdbQV3X4EF2xZIY=w480-h960"
+},
+{
+  "_id": "sbs",
+  "name": "SBS",
+  "perspective": "center",
+  "description": "서울방송",
+  "websiteUrl": "https://www.sbs.co.kr",
+  "foundedYear": 1991,
+  "ownershipInfo": "에스비에스",
+  "createdAt": {
+    "$date": "2025-05-27T00:00:00.000Z"
+  },
+  "category_list": [
+    {
+      "url": "https://news.sbs.co.kr/news/newsSection.do?sectionType=01",
+      "name": "politics"
+    },
+    {
+      "url": "https://news.sbs.co.kr/news/newsSection.do?sectionType=03",
+      "name": "society"
+    },
+    {
+      "url": "https://news.sbs.co.kr/news/newsSection.do?sectionType=02",
+      "name": "economy"
+    },
+    {
+      "url": "https://news.sbs.co.kr/news/newsSection.do?sectionType=07",
+      "name": "international"
+    },
+    {
+      "url": "https://news.sbs.co.kr/news/newsSection.do?sectionType=08",
+      "name": "culture"
+    }
+  ],
+  "aiEvaluatedPerspective": "center",
+  "expertEvaluatedPerspective": "center",
+  "logoUrl": "https://play-lh.googleusercontent.com/ehfSPqz76qx6UdMGadjH2dJylaOAFD4iVnFz6E6N2kO_pwRHi9e5d7CbY0A3G1ml6qs=w480-h960"
+},
+{
+  "_id": "ytn",
+  "name": "YTN",
+  "perspective": "center",
+  "description": "24시간 뉴스 전문 방송",
+  "websiteUrl": "https://www.ytn.co.kr",
+  "foundedYear": 1993,
+  "ownershipInfo": "한국케이블TV방송협회",
+  "createdAt": {
+    "$date": "2025-05-27T00:00:00.000Z"
+  },
+  "category_list": [
+    {
+      "url": "https://www.ytn.co.kr/news/list.php?mcd=0101",
+      "name": "politics"
+    },
+    {
+      "url": "https://www.ytn.co.kr/news/list.php?mcd=0103",
+      "name": "society"
+    },
+    {
+      "url": "https://www.ytn.co.kr/news/list.php?mcd=0104",
+      "name": "international"
+    }
+  ],
+  "aiEvaluatedPerspective": "center",
+  "expertEvaluatedPerspective": "center",
+  "logoUrl": "https://yt3.googleusercontent.com/Sd77hfGXNh1K4VgLCnYVrzWVkUKh04N5VDClPweoP-sbaZXzH3llUz2W1N_-Z4RX5_XauYpvSQ=s900-c-k-c0x00ffffff-no-rj"
+},
+{
+  "_id": "ohmy",
+  "name": "오마이뉴스",
+  "perspective": "left",
+  "description": "시민기자와 함께하는 인터넷 신문",
+  "websiteUrl": "https://www.ohmynews.com",
+  "foundedYear": 2000,
+  "ownershipInfo": "오마이뉴스 주식회사",
+  "createdAt": {
+    "$date": "2025-05-27T00:00:00.000Z"
+  },
+  "category_list": [
+    {
+      "url": "https://www.ohmynews.com/NWS_Web/ArticlePage/Total_Article.aspx?PAGE_CD=C0400",
+      "name": "politics"
+    },
+    {
+      "url": "https://www.ohmynews.com/NWS_Web/ArticlePage/Total_Article.aspx?PAGE_CD=C0200",
+      "name": "society"
+    },
+    {
+      "url": "https://www.ohmynews.com/NWS_Web/ArticlePage/Total_Article.aspx?PAGE_CD=C0300",
+      "name": "economy"
+    },
+    {
+      "url": "https://www.ohmynews.com/NWS_Web/ArticlePage/Total_Article.aspx?PAGE_CD=C0600",
+      "name": "international"
+    }
+  ],
+  "aiEvaluatedPerspective": "left",
+  "expertEvaluatedPerspective": "left",
+  "logoUrl": "https://play-lh.googleusercontent.com/6S9gtPW4hl_lApnWmitjjC8bF4NmpIHibJPbEUphz414eLzDI_H_O2N013isTmHbrsks"
+},
+{
+  "_id": "mbc",
+  "name": "MBC",
+  "perspective": "center_left",
+  "description": "문화방송",
+  "websiteUrl": "https://www.mbc.co.kr",
+  "foundedYear": 1961,
+  "ownershipInfo": "문화방송",
+  "createdAt": {
+    "$date": "2025-05-27T00:00:00.000Z"
+  },
+  "category_list": [
+    {
+      "url": "https://imnews.imbc.com/news/2025/politics/",
+      "name": "politics"
+    },
+    {
+      "url": "https://imnews.imbc.com/news/2025/society/",
+      "name": "society"
+    },
+    {
+      "url": "https://imnews.imbc.com/news/2025/econo/",
+      "name": "economy"
+    },
+    {
+      "url": "https://imnews.imbc.com/news/2025/world/",
+      "name": "international"
+    },
+    {
+      "url": "https://imnews.imbc.com/news/2025/culture/",
+      "name": "culture"
+    }
+  ],
+  "aiEvaluatedPerspective": "center_left",
+  "expertEvaluatedPerspective": "center_left",
+  "logoUrl": "https://play-lh.googleusercontent.com/HqtVY28S66KoEjc1bi-qlKWKt0lVGdG9YEoBOHl2XkTPJZG03quFYoQMf5TlWaTgaD97"
+},
+{
+  "_id": "jtbc",
+  "name": "JTBC",
+  "perspective": "center_left",
+  "description": "종합편성채널",
+  "websiteUrl": "https://www.jtbc.co.kr",
+  "foundedYear": 2011,
+  "ownershipInfo": "중앙미디어네트워크",
+  "createdAt": {
+    "$date": "2025-05-27T00:00:00.000Z"
+  },
+  "category_list": [
+    {
+      "url": "https://news.jtbc.co.kr/sections/10",
+      "name": "politics"
+    },
+    {
+      "url": "https://news.jtbc.co.kr/sections/30",
+      "name": "society"
+    },
+    {
+      "url": "https://news.jtbc.co.kr/sections/20",
+      "name": "economy"
+    },
+    {
+      "url": "https://news.jtbc.co.kr/sections/40",
+      "name": "international"
+    },
+    {
+      "url": "https://news.jtbc.co.kr/sections/50",
+      "name": "culture"
+    }
+  ],
+  "aiEvaluatedPerspective": "center_left",
+  "expertEvaluatedPerspective": "center_left",
+  "logoUrl": "https://play-lh.googleusercontent.com/S8X_ZUKgJCrlf1ihLTXIqodbA0V2m-FPIKlmMdV-z5qmKpLSbmFViUIo4CUnGknx47I"
+},
+{
+  "_id": "khan",
+  "category_list": [
+    {
+      "url": "https://www.khan.co.kr/politics",
+      "name": "politics"
+    },
+    {
+      "url": "https://www.khan.co.kr/national",
+      "name": "society"
+    },
+    {
+      "url": "https://www.khan.co.kr/economy",
+      "name": "economy"
+    },
+    {
+      "url": "https://www.khan.co.kr/world",
+      "name": "international"
+    },
+    {
+      "url": "https://www.khan.co.kr/culture",
+      "name": "culture"
+    }
+  ],
+  "createdAt": {
+    "$date": "2025-06-18T10:00:00.000Z"
+  },
+  "description": "진보 성향의 일간지",
+  "foundedYear": 1946,
+  "logoUrl": "https://play-lh.googleusercontent.com/A1zs7KtPzU7I9ktIZPSQPd1zFWpCjjEsYueSb1eIdAxWg-npMKcdbYgbLS2w7aW5P-M",
+  "name": "경향신문",
+  "ownershipInfo": "경향신문사",
+  "perspective": "left",
+  "websiteUrl": "https://www.khan.co.kr",
+  "aiEvaluatedPerspective": "left",
+  "expertEvaluatedPerspective": "left"
+},
+{
+  "_id": "joongang",
+  "category_list": [
+    {
+      "url": "https://www.joongang.co.kr/politics",
+      "name": "politics"
+    },
+    {
+      "url": "https://www.joongang.co.kr/society",
+      "name": "society"
+    },
+    {
+      "url": "https://www.joongang.co.kr/money",
+      "name": "economy"
+    },
+    {
+      "url": "https://www.joongang.co.kr/world",
+      "name": "international"
+    },
+    {
+      "url": "https://www.joongang.co.kr/culture",
+      "name": "culture"
+    }
+  ],
+  "createdAt": {
+    "$date": "2025-06-18T10:00:00.000Z"
+  },
+  "description": "중도 성향의 종합 일간지",
+  "foundedYear": 1965,
+  "logoUrl": "https://play-lh.googleusercontent.com/jw1Y8L0RV0iiUdy2JPki-V0ZNwqDMTYwPehSIuGn_Vbn3QSElksL3vHTDGa9YCeRIxg=w480-h960",
+  "name": "중앙일보",
+  "ownershipInfo": "중앙일보사",
+  "perspective": "center_right",
+  "websiteUrl": "https://www.joongang.co.kr",
+  "aiEvaluatedPerspective": "right",
+  "expertEvaluatedPerspective": "center_right"
+},
+{
+  "_id": "mk",
+  "name": "매일경제",
+  "perspective": "center_right",
+  "description": "경제 전문 일간지",
+  "websiteUrl": "https://www.mk.co.kr",
+  "foundedYear": 1966,
+  "ownershipInfo": "매일경제신문사",
+  "createdAt": "2025-06-28T00:00:00Z",
+  "category_list": [
+    {
+      "url": "https://www.mk.co.kr/news/politics/",
+      "name": "politics"
+    },
+    {
+      "url": "https://www.mk.co.kr/news/society/",
+      "name": "society"
+    },
+    {
+      "url": "https://www.mk.co.kr/news/economy/",
+      "name": "economy"
+    },
+    {
+      "url": "https://www.mk.co.kr/news/world/",
+      "name": "international"
+    },
+    {
+      "url": "https://www.mk.co.kr/news/culture/",
+      "name": "culture"
+    },
+    {
+      "url": "https://www.mk.co.kr/news/it/",
+      "name": "technology"
+    }
+  ],
+  "aiEvaluatedPerspective": "center_right",
+  "expertEvaluatedPerspective": "center_right",
+  "logoUrl": "https://play-lh.googleusercontent.com/HOQf3p8eW7VPphNHwZPuZRdd1RhcB0tr87RysY4itbMEU3Afs8sMgp27auRRYsUj9jc=w480-h960"
+},
+{
+  "_id": "donga",
+  "name": "동아일보",
+  "perspective": "center_right",
+  "description": "보수 성향의 종합 일간지",
+  "websiteUrl": "https://www.donga.com",
+  "foundedYear": 1920,
+  "ownershipInfo": "동아일보사",
+  "createdAt": "2025-06-28T00:00:00Z",
+  "category_list": [
+    {
+      "url": "https://www.donga.com/news/Politics",
+      "name": "politics"
+    },
+    {
+      "url": "https://www.donga.com/news/Society",
+      "name": "society"
+    },
+    {
+      "url": "https://www.donga.com/news/Economy",
+      "name": "economy"
+    },
+    {
+      "url": "https://www.donga.com/news/Inter",
+      "name": "international"
+    },
+    {
+      "url": "https://www.donga.com/news/Culture",
+      "name": "culture"
+    }
+  ],
+  "aiEvaluatedPerspective": "right",
+  "expertEvaluatedPerspective": "center_right",
+  "logoUrl": "https://play-lh.googleusercontent.com/ROA26tm_lGd0WYKPXSDpASug6gvRgwIcnMLeynvUK8ecBjXuPNoDW6qKUifzicJmCQ=w480-h960"
+},
+{
+  "_id": "seoul",
+  "name": "서울신문",
+  "perspective": "center_right",
+  "description": "보수 성향의 종합 일간지",
+  "websiteUrl": "https://www.seoul.co.kr/",
+  "foundedYear": 1920,
+  "ownershipInfo": "동아일보사",
+  "category_list": [
+    {
+      "url": "https://www.donga.com/news/Politics",
+      "name": "politics"
+    },
+    {
+      "url": "https://www.donga.com/news/Society",
+      "name": "society"
+    },
+    {
+      "url": "https://www.donga.com/news/Economy",
+      "name": "economy"
+    },
+    {
+      "url": "https://www.donga.com/news/Inter",
+      "name": "international"
+    },
+    {
+      "url": "https://www.donga.com/news/Culture",
+      "name": "culture"
+    }
+  ],
+  "logoUrl": "https://play-lh.googleusercontent.com/nSswzfhC2rRI0wl9a3T2sFFlQoanKA0zrxB-cRNL9iOBNaLKqgCfKDegPmxCfnbliQ=w240-h480",
+  "aiEvaluatedPerspective": "center_right",
+  "expertEvaluatedPerspective": "center_right"
+},
+{
+  "_id": "news1",
+  "name": "뉴스1",
+  "perspective": "center",
+  "description": "디지털 뉴스통신사",
+  "websiteUrl": "https://www.news1.kr",
+  "foundedYear": 2009,
+  "ownershipInfo": "뉴스1코리아",
+  "createdAt": {
+    "$date": "2025-07-31T00:00:00.000Z"
+  },
+  "category_list": [],
+  "aiEvaluatedPerspective": "center_right",
+  "expertEvaluatedPerspective": "center",
+  "logoUrl": "https://play-lh.googleusercontent.com/jpI-9xjZXn5mZJjJQQ783FOqKDv72bwSBrYEYh5Za5EUzmQWhco-LyLd9m44iZwe_yE=w240-h480"
+},
+{
+  "_id": "hankook",
+  "name": "한국일보",
+  "perspective": "center_left",
+  "description": "중도적 성향의 종합일간지",
+  "websiteUrl": "https://www.hankookilbo.com",
+  "foundedYear": 1954,
+  "ownershipInfo": "한국일보사",
+  "createdAt": {
+    "$date": "2025-07-31T00:00:00.000Z"
+  },
+  "category_list": [],
+  "aiEvaluatedPerspective": "center",
+  "expertEvaluatedPerspective": "center_left",
+  "logoUrl": "https://play-lh.googleusercontent.com/nkUHfpldwl0rW6rjApgtq1azxaeSCOdbhT63BIciinP1VhB-qwFSRn1JTwrC9WwQtdfM=w240-h480"
+},
+{
+  "_id": "newsis",
+  "name": "뉴시스",
+  "perspective": "center",
+  "description": "인터넷 종합뉴스통신사",
+  "websiteUrl": "https://www.newsis.com",
+  "foundedYear": 1999,
+  "ownershipInfo": "뉴시스",
+  "createdAt": {
+    "$date": "2025-07-31T00:00:00.000Z"
+  },
+  "category_list": [],
+  "aiEvaluatedPerspective": "center",
+  "expertEvaluatedPerspective": "center",
+  "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cc/KakaoTalk_20240731_152645753.png"
+}]

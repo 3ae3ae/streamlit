@@ -1,0 +1,363 @@
+[{
+  "_id": {
+    "$oid": "688c4aaaab1261b0241e614c"
+  },
+  "userId": "H5fEnGtrLfgOqohIorTIWz4f3nw1",
+  "sourceId": "mbn",
+  "perspective": "right",
+  "evaluatedAt": {
+    "$date": "2025-08-01T05:03:43.088Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "688c4af3cc2f7710b5069dc7"
+  },
+  "userId": "FC0JEwzarAbESZujX2HGC3zC5u23",
+  "sourceId": "kbs",
+  "perspective": "center",
+  "evaluatedAt": {
+    "$date": "2025-08-01T05:04:51.823Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "688ca98ad99d7de0a1ad1055"
+  },
+  "userId": "4363620630",
+  "sourceId": "hankook",
+  "perspective": "center_right",
+  "evaluatedAt": {
+    "$date": "2025-08-01T11:48:26.500Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68918f05f09167305443d573"
+  },
+  "userId": "FC0JEwzarAbESZujX2HGC3zC5u23",
+  "sourceId": "khan",
+  "perspective": "center",
+  "evaluatedAt": {
+    "$date": "2025-08-05T04:56:37.651Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6895b4b7337b97a7a274e2f0"
+  },
+  "userId": "WQEhvc0FQudf1KYUg00JQEsS9AV2",
+  "sourceId": "ytn",
+  "perspective": "center",
+  "evaluatedAt": {
+    "$date": "2025-08-08T08:26:31.994Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6895cb00921e6f233295e12b"
+  },
+  "userId": "4387869233",
+  "sourceId": "jtbc",
+  "perspective": "center",
+  "evaluatedAt": {
+    "$date": "2025-08-08T10:01:37.015Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6896b37970ebf3ea05263c6d"
+  },
+  "userId": "4364108126",
+  "sourceId": "hani",
+  "perspective": "left",
+  "evaluatedAt": {
+    "$date": "2025-08-09T02:33:30.091Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6896b3e4786df03361783631"
+  },
+  "userId": "WQEhvc0FQudf1KYUg00JQEsS9AV2",
+  "sourceId": "kbs",
+  "perspective": "center",
+  "evaluatedAt": {
+    "$date": "2025-08-09T02:36:17.876Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "689c0d7dc61b729836859f70"
+  },
+  "userId": "4364108126",
+  "sourceId": "mbc",
+  "perspective": "center_left",
+  "evaluatedAt": {
+    "$date": "2025-08-13T03:58:53.091Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "689c2893d54ab0e78c8bd313"
+  },
+  "userId": "WQEhvc0FQudf1KYUg00JQEsS9AV2",
+  "sourceId": "yna",
+  "perspective": "center",
+  "evaluatedAt": {
+    "$date": "2025-08-13T05:54:27.510Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68a05ee799bc0616163f4367"
+  },
+  "userId": "WQEhvc0FQudf1KYUg00JQEsS9AV2",
+  "sourceId": "channel_a",
+  "perspective": "right",
+  "evaluatedAt": {
+    "$date": "2025-08-16T10:35:19.314Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68a05fa2e24c2d7c98c0ed09"
+  },
+  "userId": "v7BMpRE3HGOD1gyd2CNE8t2s7Ei2",
+  "sourceId": "hani",
+  "perspective": "left",
+  "evaluatedAt": {
+    "$date": "2025-08-16T10:38:26.371Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68a05fb4e24c2d7c98c0ed0a"
+  },
+  "userId": "v7BMpRE3HGOD1gyd2CNE8t2s7Ei2",
+  "sourceId": "joongang",
+  "perspective": "right",
+  "evaluatedAt": {
+    "$date": "2025-08-16T10:38:44.528Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68a378933029bb57bb78de97"
+  },
+  "userId": "SrwaBWUL0qhaITX0AR8EkYzzwOD2",
+  "sourceId": "khan",
+  "perspective": "left",
+  "evaluatedAt": {
+    "$date": "2025-08-18T19:01:39.307Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68a59ce79c63c910d5f59f13"
+  },
+  "userId": "CKI58EoSHtSFDOHGPK9CGGUorKD2",
+  "sourceId": "ytn",
+  "perspective": "center",
+  "evaluatedAt": {
+    "$date": "2025-08-20T10:01:13.256Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68a6b0160e35d79e2e68fc6f"
+  },
+  "userId": "4364108126",
+  "sourceId": "joongang",
+  "perspective": "right",
+  "evaluatedAt": {
+    "$date": "2025-08-21T05:35:18.514Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68a6b0290e35d79e2e68fc70"
+  },
+  "userId": "4364108126",
+  "sourceId": "yna",
+  "perspective": "center",
+  "evaluatedAt": {
+    "$date": "2025-08-21T05:35:37.555Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68b2a1b60a682fa984819fd3"
+  },
+  "userId": "4410253606",
+  "sourceId": "newsis",
+  "perspective": "center_right",
+  "evaluatedAt": {
+    "$date": "2025-08-30T07:01:10.809Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68c2dee54e214250c75a3795"
+  },
+  "userId": "4438589942",
+  "sourceId": "ohmy",
+  "perspective": "center_left",
+  "evaluatedAt": {
+    "$date": "2025-09-11T14:38:29.633Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68cb6d5c8f751886f6efa431"
+  },
+  "userId": "4452357133",
+  "sourceId": "hani",
+  "perspective": "left",
+  "evaluatedAt": {
+    "$date": "2025-09-18T02:24:28.134Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68cc2884a67fe90ff8fae285"
+  },
+  "userId": "05BXOozVL9V0ManGYA4sBjl8mrm2",
+  "sourceId": "donga",
+  "perspective": "center_left",
+  "evaluatedAt": {
+    "$date": "2025-09-18T15:43:00.854Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68cd7480781be29cf6e298fa"
+  },
+  "userId": "4438589942",
+  "sourceId": "news1",
+  "perspective": "center",
+  "evaluatedAt": {
+    "$date": "2025-09-19T15:19:28.902Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68d867d5ef1995294b00f20b"
+  },
+  "userId": "vB0VDunobggP294ylo7giTXtjG13",
+  "sourceId": "mbc",
+  "perspective": "left",
+  "evaluatedAt": {
+    "$date": "2025-09-27T22:40:21.704Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68db8a049f6532fcc0e68b84"
+  },
+  "userId": "5rb8ASpZSvfKiVEvCECQjZqPctB3",
+  "sourceId": "yna",
+  "perspective": "center",
+  "evaluatedAt": {
+    "$date": "2025-09-30T07:43:00.342Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68df704d71aee0ab8efba6ab"
+  },
+  "userId": "fmSeexsaTWQcSsaNmRGKUxKqgRV2",
+  "sourceId": "mbc",
+  "perspective": "left",
+  "evaluatedAt": {
+    "$date": "2025-10-03T06:42:21.480Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68e123b7f191ace6f9d6d26f"
+  },
+  "userId": "05BXOozVL9V0ManGYA4sBjl8mrm2",
+  "sourceId": "kbs",
+  "perspective": "right",
+  "evaluatedAt": {
+    "$date": "2025-10-04T13:40:07.061Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68ee4aed8407a6545cd65c82"
+  },
+  "userId": "4490113315",
+  "sourceId": "yna",
+  "perspective": "left",
+  "evaluatedAt": {
+    "$date": "2025-10-14T13:06:53.675Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68ee4af38407a6545cd65c83"
+  },
+  "userId": "4490113315",
+  "sourceId": "kbs",
+  "perspective": "center",
+  "evaluatedAt": {
+    "$date": "2025-10-14T13:06:59.069Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68ee4afb8407a6545cd65c85"
+  },
+  "userId": "4490113315",
+  "sourceId": "newsis",
+  "perspective": "center_right",
+  "evaluatedAt": {
+    "$date": "2025-10-14T13:07:07.671Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "68f4afb65f1e7c8115834a8d"
+  },
+  "userId": "4478001475",
+  "sourceId": "sbs",
+  "perspective": "center_right",
+  "evaluatedAt": {
+    "$date": "2025-10-19T09:30:30.200Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6901db62df37263980645cd5"
+  },
+  "userId": "IN85XwUp9NgWxDtx1cnhTjXi3kP2",
+  "sourceId": "chosun",
+  "perspective": "right",
+  "evaluatedAt": {
+    "$date": "2025-10-29T09:16:18.109Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69021291bdc310327601c8b1"
+  },
+  "userId": "4512458052",
+  "sourceId": "hani",
+  "perspective": "left",
+  "evaluatedAt": {
+    "$date": "2025-10-29T13:11:45.097Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6902129abdc310327601c8b2"
+  },
+  "userId": "4512458052",
+  "sourceId": "mbc",
+  "perspective": "left",
+  "evaluatedAt": {
+    "$date": "2025-10-29T13:11:54.422Z"
+  }
+}]
