@@ -24,6 +24,35 @@ COLORS = {
     "unknown": "#ADB5BD"         # Lighter gray for unknown/empty
 }
 
+CATEGORY_LABELS = {
+    "politics": "정치",
+    "economy": "경제",
+    "society": "사회",
+    "culture": "문화",
+    "technology": "기술",
+    "international": "국제",
+    "unknown": "기타/미분류"
+}
+
+CATEGORY_COLORS = {
+    "politics": "#FF6B6B",
+    "economy": "#4DABF7",
+    "society": "#51CF66",
+    "culture": "#FFA94D",
+    "technology": "#CC5DE8",
+    "international": "#20C997",
+    "unknown": "#ADB5BD"
+}
+
+PERSPECTIVE_LABELS = {
+    "left": "진보",
+    "center_left": "중도진보",
+    "center": "중도",
+    "center_right": "중도보수",
+    "right": "보수",
+    "unknown": "미분류"
+}
+
 # Chart theme configuration
 CHART_THEME = {
     "font_family": "Noto Sans KR",
@@ -1064,3 +1093,229 @@ def create_issue_evaluation_pie_chart(
     )])
     
     return apply_chart_theme(fig, f"이슈 {issue_id} - 평가 분포")
+
+
+def create_user_watch_category_bar_chart(
+    category_df: pd.DataFrame
+) -> go.Figure:
+    """
+    Create bar chart showing the distribution of watched issues by category.
+    
+    Args:
+        category_df: DataFrame with columns 'category' and 'watch_count'
+    
+    Returns:
+        Plotly figure with category distribution
+    """
+    if category_df.empty:
+        logger.warning("Empty dataframe provided for user watch category chart")
+        fig = go.Figure()
+        fig.add_annotation(
+            text="최근 한달간 시청한 이슈가 없습니다",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16)
+        )
+        return apply_chart_theme(fig, "최근 한달 시청 카테고리")
+    
+    data = category_df.copy()
+    data["category_label"] = data["category"].map(CATEGORY_LABELS).fillna(data["category"])
+    
+    fig = px.bar(
+        data,
+        x="category_label",
+        y="watch_count",
+        color="category",
+        color_discrete_map=CATEGORY_COLORS,
+        category_orders={"category_label": data["category_label"].tolist()}
+    )
+    
+    fig.update_traces(
+        hovertemplate="<b>%{x}</b><br>시청 횟수: %{y}<extra></extra>",
+        texttemplate="%{y}",
+        textposition="outside"
+    )
+    
+    fig.update_layout(
+        xaxis_title="이슈 카테고리",
+        yaxis_title="시청 횟수",
+        bargap=0.35
+    )
+    
+    fig = apply_chart_theme(fig, "최근 한달 시청 카테고리")
+    fig.update_layout(showlegend=False)
+    return fig
+
+
+def create_user_watch_daily_chart(
+    daily_df: pd.DataFrame
+) -> go.Figure:
+    """
+    Create bar chart showing daily watch counts for the selected user.
+    
+    Args:
+        daily_df: DataFrame with columns 'date' and 'watch_count'
+    
+    Returns:
+        Plotly figure with daily watch counts
+    """
+    if daily_df.empty:
+        logger.info("No daily watch data available for user chart")
+        fig = go.Figure()
+        fig.add_annotation(
+            text="최근 한달간 시청 기록이 없습니다",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16)
+        )
+        return apply_chart_theme(fig, "일자별 시청 수")
+    
+    data = daily_df.copy()
+    data["date"] = pd.to_datetime(data["date"])
+    
+    fig = px.bar(
+        data,
+        x="date",
+        y="watch_count",
+        text="watch_count",
+        color_discrete_sequence=["#4DABF7"]
+    )
+    
+    fig.update_traces(
+        hovertemplate="<b>%{x|%Y-%m-%d}</b><br>시청 횟수: %{y}<extra></extra>",
+        texttemplate="%{text}",
+        textposition="outside"
+    )
+    
+    fig.update_layout(
+        xaxis_title="날짜",
+        yaxis_title="시청 횟수",
+        bargap=0.2,
+        margin=dict(l=40, r=20, t=60, b=40)
+    )
+    
+    fig.update_xaxes(
+        tickformat="%m-%d",
+        tickangle=-45
+    )
+    
+    fig = apply_chart_theme(fig, "일자별 시청 수")
+    fig.update_layout(showlegend=False)
+    return fig
+
+
+def create_user_evaluation_distribution_chart(
+    perspective_df: pd.DataFrame
+) -> go.Figure:
+    """
+    Create pie chart showing the distribution of user evaluations by perspective.
+    
+    Args:
+        perspective_df: DataFrame with columns 'perspective' and 'evaluation_count'
+    
+    Returns:
+        Plotly figure with evaluation distribution
+    """
+    if perspective_df.empty:
+        logger.info("No evaluation data available for user chart")
+        fig = go.Figure()
+        fig.add_annotation(
+            text="최근 한달간 남긴 평가가 없습니다",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16)
+        )
+        return apply_chart_theme(fig, "최근 한달 평가 성향 분포")
+    
+    data = perspective_df.copy()
+    data["label"] = data["perspective"].map(PERSPECTIVE_LABELS).fillna(data["perspective"])
+    colors = [COLORS.get(p, COLORS["unknown"]) for p in data["perspective"]]
+    
+    fig = go.Figure(data=[go.Pie(
+        labels=data["label"],
+        values=data["evaluation_count"],
+        marker=dict(colors=colors),
+        hole=0.4,
+        hovertemplate="<b>%{label}</b><br>" +
+                      "평가 수: %{value}<br>" +
+                      "비율: %{percent}<br>" +
+                      "<extra></extra>",
+        textinfo="label+percent"
+    )])
+    
+    return apply_chart_theme(fig, "최근 한달 평가 성향 분포")
+
+
+def create_media_perspective_distribution_chart(
+    perspective_df: pd.DataFrame
+) -> go.Figure:
+    """
+    Create horizontal bar chart for media perspective exposure.
+    
+    Args:
+        perspective_df: DataFrame with columns 'perspective' and 'weighted_coverage'
+    
+    Returns:
+        Plotly figure with media perspective distribution
+    """
+    if perspective_df.empty:
+        logger.info("No media perspective data available for chart")
+        fig = go.Figure()
+        fig.add_annotation(
+            text="언론사 노출 데이터를 계산할 수 없습니다",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16)
+        )
+        return apply_chart_theme(fig, "시청 이슈의 언론 성향 노출")
+    
+    data = perspective_df.copy()
+    total_weight = data["weighted_coverage"].sum()
+    data["percentage"] = data["weighted_coverage"] / total_weight * 100 if total_weight > 0 else 0
+    data["label"] = data["perspective"].map(PERSPECTIVE_LABELS).fillna(data["perspective"])
+    data = data.sort_values("weighted_coverage", ascending=True)
+    
+    color_map = {p: COLORS.get(p, COLORS["unknown"]) for p in data["perspective"]}
+    
+    fig = px.bar(
+        data,
+        x="weighted_coverage",
+        y="label",
+        orientation="h",
+        color="perspective",
+        color_discrete_map=color_map,
+        custom_data=["percentage"]
+    )
+    
+    fig.update_traces(
+        hovertemplate="<b>%{y}</b><br>노출 비중: %{customdata[0]:.1f}%<br>가중치: %{x:.2f}<extra></extra>",
+        texttemplate="%{customdata[0]:.1f}%",
+        textposition="outside"
+    )
+    
+    fig.update_layout(
+        xaxis_title="가중 노출량",
+        yaxis_title="언론 성향",
+        margin=dict(l=80, r=20, t=60, b=40)
+    )
+    
+    fig.update_yaxes(
+        categoryorder="array",
+        categoryarray=data["label"].tolist()
+    )
+    
+    fig = apply_chart_theme(fig, "시청 이슈의 언론 성향 노출")
+    fig.update_layout(showlegend=False)
+    return fig

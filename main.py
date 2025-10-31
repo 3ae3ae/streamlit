@@ -12,6 +12,7 @@ import streamlit as st
 from pages import (
     issue_evaluation,
     media_support,
+    user_monthly_report,
     overall_preference,
     time_series,
     topic_wordcloud,
@@ -53,6 +54,7 @@ def main():
         "전체 성향 분포": overall_preference.show,
         "시간별 성향 변화": time_series.show,
         "인기 토픽 워드클라우드": topic_wordcloud.show,
+        "사용자 월간 리포트": user_monthly_report.show,
         "개인 성향 변화": user_journey.show,
         "언론사 지지도": media_support.show,
         "이슈 평가 분포": issue_evaluation.show
@@ -71,6 +73,7 @@ def main():
         "전체 성향 분포": "모든 사용자의 정치 성향 분포를 원 그래프로 표시합니다.",
         "시간별 성향 변화": "시간에 따른 정치 성향 점수 변화를 추적합니다.",
         "인기 토픽 워드클라우드": "구독자 수가 많은 인기 토픽을 워드클라우드로 시각화합니다.",
+        "사용자 월간 리포트": "특정 사용자의 최근 한달간 시청·평가·언론 노출과 성향 변화를 요약합니다.",
         "개인 성향 변화": "특정 사용자의 정치 성향 변화를 시간에 따라 추적합니다.",
         "언론사 지지도": "사용자 평가를 기반으로 언론사의 누적 지지도를 분석합니다.",
         "이슈 평가 분포": "특정 이슈에 대한 사용자 평가 분포를 확인합니다."

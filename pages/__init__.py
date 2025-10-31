@@ -8,6 +8,7 @@ Each page module exports a show() function as the entry point.
 from . import (
     issue_evaluation,
     media_support,
+    user_monthly_report,
     overall_preference,
     time_series,
     topic_wordcloud,
@@ -17,6 +18,7 @@ from . import (
 __all__ = [
     "issue_evaluation",
     "media_support",
+    "user_monthly_report",
     "overall_preference",
     "time_series",
     "topic_wordcloud",

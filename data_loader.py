@@ -314,6 +314,33 @@ def load_issue_evaluations() -> pd.DataFrame:
 
 
 @st.cache_data
+def load_user_watch_history() -> pd.DataFrame:
+    """
+    Load user watch history from prod.userWatchHistory.json.
+    
+    Returns:
+        DataFrame with user watch history information
+    """
+    try:
+        data = load_json_file("prod.userWatchHistory.json")
+        
+        # Parse MongoDB fields
+        for record in data:
+            if "_id" in record:
+                record["_id"] = parse_mongodb_oid(record["_id"])
+            if "watchedAt" in record:
+                record["watchedAt"] = parse_mongodb_date(record["watchedAt"])
+        
+        df = pd.DataFrame(data)
+        logger.info(f"Loaded {len(df)} watch history records")
+        return df
+    except Exception as e:
+        logger.error(f"Error loading user watch history: {e}")
+        st.error(f"시청 기록 데이터 로드 중 오류 발생: {e}")
+        return pd.DataFrame()
+
+
+@st.cache_data
 def load_media_sources() -> pd.DataFrame:
     """
     Load media sources from prod.mediaSources.json.
