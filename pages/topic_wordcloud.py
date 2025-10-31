@@ -144,3 +144,7 @@ def show():
 
 # Alias for backward compatibility
 show_topic_wordcloud_page = show
+
+
+if __name__ == "__main__":
+    show()

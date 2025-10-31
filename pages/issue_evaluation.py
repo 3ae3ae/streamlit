@@ -244,3 +244,7 @@ def show():
 
 # Alias for backward compatibility
 show_issue_evaluation_page = show
+
+
+if __name__ == "__main__":
+    show()

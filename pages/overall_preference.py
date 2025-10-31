@@ -80,3 +80,7 @@ def show():
 
 # Alias for backward compatibility
 show_overall_preference_page = show
+
+
+if __name__ == "__main__":
+    show()
