@@ -7,6 +7,7 @@ import logging
 from typing import Optional
 
 import pandas as pd
+import plotly.express as px
 import plotly.graph_objects as go
 
 # Configure logging
@@ -412,12 +413,12 @@ def create_time_series_chart(
     return apply_chart_theme(fig, title)
 
 
-def create_time_series_pie_animation(
+def create_time_series_distribution_animation(
     df: pd.DataFrame,
     view_type: str,
     category: Optional[str] = None
 ) -> go.Figure:
-    """Create animated pie chart showing political preference distribution over time."""
+    """Create animated bar chart showing political preference distribution over time."""
     if df.empty:
         logger.warning("Empty dataframe provided for time series pie chart")
         fig = go.Figure()
@@ -452,9 +453,6 @@ def create_time_series_pie_animation(
         "technology": "기술",
         "international": "국제"
     }
-
-    labels = ["진보", "중도", "보수"]
-    colors = [COLORS["left"], COLORS["center"], COLORS["right"]]
 
     if view_type == "category" and category:
         animation_df = df[df["category"] == category].copy()
@@ -530,79 +528,64 @@ def create_time_series_pie_animation(
         animation_df["right_value"] = animation_df["right_proportion"].fillna(0) * 100
         title_prefix = "전체 카테고리 평균 - 시간별 활성 유저 분포"
 
-    first_row = animation_df.iloc[0]
+    frame_duration = 350  # milliseconds per frame
+    transition_duration = 350  # easing duration between frames
+    easing_function = "linear" # 혹은 "cubic-in-out" 혹은 "elastic" 혹은 "bounce" 혹은 "back-in-out" 혹은 "linear" 혹은 "quad" 혹은 "sin" 혹은 "circle"
 
-    fig = go.Figure()
-    fig.add_trace(go.Pie(
-        labels=labels,
-        values=[first_row["left_value"], first_row["center_value"], first_row["right_value"]],
-        marker=dict(
-            colors=colors,
-            line=dict(color="rgba(255,255,255,0.15)", width=2)
-        ),
-        textinfo="label+percent",
-        hovertemplate="<b>%{label}</b><br>비율: %{value:.1f}%<br><extra></extra>",
-        hole=0.35,
-        sort=False
-    ))
+    # Map preference columns to localized labels and colors for consistent ordering
+    value_columns = {
+        "left": ("left_value", "진보", COLORS["left"]),
+        "center": ("center_value", "중도", COLORS["center"]),
+        "right": ("right_value", "보수", COLORS["right"])
+    }
 
-    frame_duration = 900  # milliseconds per frame
-    transition_duration = 500  # easing duration between frames
-    easing_function = "cubic-in-out"
+    preference_order = [value_columns[key][1] for key in ["left", "center", "right"]]
+    color_map = {value_columns[key][1]: value_columns[key][2] for key in value_columns}
 
-    frames = []
-    for _, row in animation_df.iterrows():
-        frame_name = row["label"]
-        frames.append(go.Frame(
-            data=[go.Pie(
-                labels=labels,
-                values=[row["left_value"], row["center_value"], row["right_value"]],
-                marker=dict(
-                    colors=colors,
-                    line=dict(color="rgba(255,255,255,0.15)", width=2)
-                ),
-                textinfo="label+percent",
-                hovertemplate="<b>%{label}</b><br>비율: %{value:.1f}%<br><extra></extra>",
-                hole=0.35,
-                sort=False
-            )],
-            name=frame_name,
-            layout=go.Layout(
-                title=dict(
-                    text=f"{title_prefix} - {frame_name}",
-                    font=dict(
-                        size=CHART_THEME["title_font_size"],
-                        color=CHART_THEME["text_color"]
-                    ),
-                    x=0.5,
-                    xanchor="center"
-                ),
-                transition=dict(duration=transition_duration, easing=easing_function)
-            )
-        ))
+    long_df = animation_df.melt(
+        id_vars=["date", "label"],
+        value_vars=[value_columns[key][0] for key in value_columns],
+        var_name="preference",
+        value_name="value"
+    )
+    preference_label_map = {value_columns[key][0]: value_columns[key][1] for key in value_columns}
+    long_df["preference_label"] = long_df["preference"].map(preference_label_map)
+    long_df["value_text"] = long_df["value"].round(1)
+    long_df = long_df.sort_values(["date", "preference_label"])
 
-    fig.frames = frames
+    fig = px.bar(
+        long_df,
+        x="value",
+        y="preference_label",
+        color="preference_label",
+        orientation="h",
+        animation_frame="label",
+        animation_group="preference_label",
+        category_orders={
+            "preference_label": preference_order,
+            "label": long_df["label"].unique().tolist()
+        },
+        color_discrete_map=color_map,
+        range_x=[0, 100],
+        text="value_text",
+        custom_data=["label"]
+    )
 
-    slider_steps = []
-    for frame in frames:
-        slider_steps.append({
-            "label": frame.name,
-            "method": "animate",
-            "args": [
-                [frame.name],
-                {
-                    "frame": {"duration": frame_duration, "redraw": True},
-                    "transition": {"duration": transition_duration, "easing": easing_function},
-                    "mode": "immediate"
-                }
-            ]
-        })
+    fig.update_traces(
+        texttemplate="%{text:.1f}%",
+        textposition="inside",
+        hovertemplate="날짜: %{customdata[0]}<br><b>%{y}</b> 비율: %{x:.1f}%<br><extra></extra>",
+        marker=dict(line=dict(color="rgba(255,255,255,0.1)", width=1)),
+        cliponaxis=False
+    )
 
     fig = apply_chart_theme(fig)
 
+    first_label = animation_df.iloc[0]["label"]
+
     fig.update_layout(
         title=dict(
-            text=f"{title_prefix} - {first_row['label']}",
+            text=f"{title_prefix} - {first_label}",
             font=dict(
                 size=CHART_THEME["title_font_size"],
                 color=CHART_THEME["text_color"]
@@ -610,81 +593,68 @@ def create_time_series_pie_animation(
             x=0.5,
             xanchor="center"
         ),
-        showlegend=True,
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=-0.15,
+            y=-0.22,
             xanchor="center",
             x=0.5
         ),
-        updatemenus=[
-            {
-                "type": "buttons",
-                "direction": "left",
-                "pad": {"r": 10, "t": 70},
-                "showactive": False,
-                "x": 0.0,
-                "y": 1.12,
-                "buttons": [
-                    {
-                        "label": "▶ 재생",
-                        "method": "animate",
-                        "args": [
-                            None,
-                            {
-                                "frame": {"duration": frame_duration, "redraw": True},
-                                "fromcurrent": True,
-                                "transition": {"duration": transition_duration, "easing": easing_function}
-                            }
-                        ]
-                    },
-                    {
-                        "label": "⏸ 정지",
-                        "method": "animate",
-                        "args": [
-                            [None],
-                            {
-                                "frame": {"duration": 0, "redraw": False},
-                                "mode": "immediate",
-                                "transition": {"duration": 0, "easing": easing_function}
-                            }
-                        ]
-                    }
-                ]
-            }
-        ],
-        sliders=[
-            {
-                "active": 0,
-                "y": -0.1,
-                "x": 0.1,
-                "len": 0.8,
-                "pad": {"t": 50, "b": 10},
-                "currentvalue": {
-                    "prefix": "날짜: ",
-                    "visible": True,
-                    "font": {
-                        "size": 12,
-                        "color": CHART_THEME["text_color"]
-                    }
-                },
-                "steps": slider_steps
-            }
-        ]
+        xaxis=dict(
+            title="비율 (%)",
+            range=[0, 100],
+            tickmode="linear",
+            dtick=10,
+            ticks="outside"
+        ),
+        yaxis=dict(
+            title="",
+            categoryorder="array",
+            categoryarray=preference_order
+        ),
+        bargap=0.3,
+        transition=dict(duration=transition_duration, easing=easing_function)
     )
 
-    fig.update_traces(
-        sort=False,
-        hole=0.35,
-        marker=dict(
-            colors=colors,
-            line=dict(color="rgba(255,255,255,0.15)", width=2)
-        ),
-        textfont=dict(size=13)
-    )
+    if fig.layout.updatemenus:
+        menu = fig.layout.updatemenus[0]
+        menu.update(direction="left", pad=dict(r=10, t=70), x=0.0, y=1.12, showactive=False)
+        for button in menu.buttons:
+            if len(button.args) < 2 or not isinstance(button.args[1], dict):
+                continue
+
+            animation_args = button.args[1]
+            animation_args.setdefault("frame", {})
+            animation_args.setdefault("transition", {})
+
+            if getattr(button, "label", "") == "⏸ 정지":
+                animation_args["frame"].update({"duration": 0, "redraw": False})
+                animation_args["transition"].update({"duration": 0, "easing": easing_function})
+                animation_args["mode"] = "immediate"
+                animation_args.pop("fromcurrent", None)
+            else:
+                animation_args["frame"].update({"duration": frame_duration, "redraw": True})
+                animation_args["transition"].update({"duration": transition_duration, "easing": easing_function})
+                animation_args["fromcurrent"] = True
+
+    if fig.layout.sliders:
+        slider = fig.layout.sliders[0]
+        slider.update(pad=dict(t=50, b=10), x=0.1, len=0.8, y=-0.1)
+        slider.currentvalue.update(prefix="날짜: ", font=dict(size=12, color=CHART_THEME["text_color"]))
+        for step in slider.steps:
+            if len(step.args) < 2 or not isinstance(step.args[1], dict):
+                continue
+
+            step_args = step.args[1]
+            step_args["frame"] = {"duration": frame_duration, "redraw": True}
+            step_args["transition"] = {"duration": transition_duration, "easing": easing_function}
+            step_args["mode"] = "immediate"
 
     return fig
+
+
+# Backward compatibility with earlier naming
+create_time_series_pie_animation = create_time_series_distribution_animation
 
 
 def create_user_political_journey_chart(

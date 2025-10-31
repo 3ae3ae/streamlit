@@ -120,7 +120,7 @@ def show():
             with st.spinner("차트를 생성하는 중..."):
                 fig = create_user_political_journey_chart(history_df, user_id)
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
             
             # Display additional information
             with st.expander("차트 해석 방법"):

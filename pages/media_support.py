@@ -196,7 +196,7 @@ def show():
                 with st.spinner("비교 차트를 생성하는 중..."):
                     fig = create_media_support_chart(support_df, media_ids=selected_media_ids)
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width="stretch")
                 
                 # Display individual media statistics
                 with st.expander("개별 언론사 통계"):
@@ -247,7 +247,7 @@ def show():
                 with st.spinner("차트를 생성하는 중..."):
                     fig = create_media_support_chart(support_df, media_id=selected_media_id)
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width="stretch")
             
             # Display additional information
             with st.expander("지지도 계산 방법"):

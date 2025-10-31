@@ -1208,7 +1208,7 @@ dependencies = [
 requires-dist = [
     { name = "pandas", specifier = ">=2.1.0" },
     { name = "pillow", specifier = ">=10.0.0" },
-    { name = "plotly", specifier = ">=5.17.0" },
+    { name = "plotly", specifier = ">=6.3.1" },
     { name = "pydantic", specifier = ">=2.12.3" },
     { name = "pymongo", specifier = ">=4.15.3" },
     { name = "streamlit", specifier = ">=1.28.0" },

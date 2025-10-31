@@ -35,7 +35,7 @@ def show():
         
         # Create and display pie chart
         fig = create_political_preference_pie_chart(users_df)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
         
         # Display additional information
         with st.expander("상세 정보"):

@@ -169,7 +169,7 @@ def show():
             with st.spinner("차트를 생성하는 중..."):
                 fig = create_issue_evaluation_pie_chart(evaluations_df, issue_id)
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
             
             # Display additional information
             with st.expander("평가 분포 해석"):
