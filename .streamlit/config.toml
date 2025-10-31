@@ -2,7 +2,16 @@
 # 시스템 테마 자동 인식 (라이트/다크 모드)
 base = "light"  # 기본값은 light, 사용자 시스템 설정에 따라 자동 전환
 primaryColor = "#3498DB"
-font = "sans serif"
+font = "Noto Sans KR, sans-serif"
 
 [browser]
 gatherUsageStats = false
+
+[server]
+enableStaticServing = true
+
+[[theme.fontFaces]]
+family = "Noto Sans KR"
+url = "app/static/fonts/NotoSansKR-Regular.woff2"
+style = "normal"
+weight = 400
