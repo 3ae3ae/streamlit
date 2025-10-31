@@ -26,7 +26,7 @@ COLORS = {
 
 # Chart theme configuration
 CHART_THEME = {
-    "font_family": "Malgun Gothic, Apple SD Gothic Neo, sans-serif",
+    "font_family": "Malgun Gothic, Apple SD Gothic Neo, sans-serif, Arial, Helvetica, sans-serif",
     "font_size": 12,
     "title_font_size": 16,
     "background_color": "rgba(0,0,0,0)",  # Transparent to adapt to theme
