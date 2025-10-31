@@ -12,6 +12,6 @@ enableStaticServing = true
 
 [[theme.fontFaces]]
 family = "Noto Sans KR"
-url = "app/static/fonts/NotoSansKR-Regular.woff2"
+url = "https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap"
 style = "normal"
 weight = 400
