@@ -412,6 +412,281 @@ def create_time_series_chart(
     return apply_chart_theme(fig, title)
 
 
+def create_time_series_pie_animation(
+    df: pd.DataFrame,
+    view_type: str,
+    category: Optional[str] = None
+) -> go.Figure:
+    """Create animated pie chart showing political preference distribution over time."""
+    if df.empty:
+        logger.warning("Empty dataframe provided for time series pie chart")
+        fig = go.Figure()
+        fig.add_annotation(
+            text="데이터가 없습니다",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16)
+        )
+        fig = apply_chart_theme(fig)
+        fig.update_layout(
+            title=dict(
+                text="시간별 활성 유저 분포 (원그래프)",
+                font=dict(
+                    size=CHART_THEME["title_font_size"],
+                    color=CHART_THEME["text_color"]
+                ),
+                x=0.5,
+                xanchor="center"
+            )
+        )
+        return fig
+
+    category_map = {
+        "politics": "정치",
+        "economy": "경제",
+        "society": "사회",
+        "culture": "문화",
+        "technology": "기술",
+        "international": "국제"
+    }
+
+    labels = ["진보", "중도", "보수"]
+    colors = [COLORS["left"], COLORS["center"], COLORS["right"]]
+
+    if view_type == "category" and category:
+        animation_df = df[df["category"] == category].copy()
+        if animation_df.empty:
+            fig = go.Figure()
+            fig.add_annotation(
+                text=f"{category_map.get(category, category)} 카테고리 데이터가 없습니다",
+                xref="paper",
+                yref="paper",
+                x=0.5,
+                y=0.5,
+                showarrow=False,
+                font=dict(size=16)
+            )
+            fig = apply_chart_theme(fig)
+            fig.update_layout(
+                title=dict(
+                    text=f"{category_map.get(category, category)} - 시간별 활성 유저 분포",
+                    font=dict(
+                        size=CHART_THEME["title_font_size"],
+                        color=CHART_THEME["text_color"]
+                    ),
+                    x=0.5,
+                    xanchor="center"
+                )
+            )
+            return fig
+
+        animation_df = animation_df.sort_values("date")
+        animation_df["label"] = animation_df["date"].dt.strftime("%Y-%m-%d")
+        animation_df["left_value"] = animation_df["left_proportion"].fillna(0) * 100
+        animation_df["center_value"] = animation_df["center_proportion"].fillna(0) * 100
+        animation_df["right_value"] = animation_df["right_proportion"].fillna(0) * 100
+        title_prefix = f"{category_map.get(category, category)} - 시간별 활성 유저 분포"
+    else:
+        animation_df = (
+            df.groupby("date").agg({
+                "left_proportion": "mean",
+                "center_proportion": "mean",
+                "right_proportion": "mean"
+            }).reset_index()
+        )
+
+        if animation_df.empty:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="표시할 데이터가 없습니다",
+                xref="paper",
+                yref="paper",
+                x=0.5,
+                y=0.5,
+                showarrow=False,
+                font=dict(size=16)
+            )
+            fig = apply_chart_theme(fig)
+            fig.update_layout(
+                title=dict(
+                    text="전체 카테고리 평균 - 시간별 활성 유저 분포",
+                    font=dict(
+                        size=CHART_THEME["title_font_size"],
+                        color=CHART_THEME["text_color"]
+                    ),
+                    x=0.5,
+                    xanchor="center"
+                )
+            )
+            return fig
+
+        animation_df = animation_df.sort_values("date")
+        animation_df["label"] = animation_df["date"].dt.strftime("%Y-%m-%d")
+        animation_df["left_value"] = animation_df["left_proportion"].fillna(0) * 100
+        animation_df["center_value"] = animation_df["center_proportion"].fillna(0) * 100
+        animation_df["right_value"] = animation_df["right_proportion"].fillna(0) * 100
+        title_prefix = "전체 카테고리 평균 - 시간별 활성 유저 분포"
+
+    first_row = animation_df.iloc[0]
+
+    fig = go.Figure()
+    fig.add_trace(go.Pie(
+        labels=labels,
+        values=[first_row["left_value"], first_row["center_value"], first_row["right_value"]],
+        marker=dict(
+            colors=colors,
+            line=dict(color="rgba(255,255,255,0.15)", width=2)
+        ),
+        textinfo="label+percent",
+        hovertemplate="<b>%{label}</b><br>비율: %{value:.1f}%<br><extra></extra>",
+        hole=0.35,
+        sort=False
+    ))
+
+    frame_duration = 900  # milliseconds per frame
+    transition_duration = 500  # easing duration between frames
+    easing_function = "cubic-in-out"
+
+    frames = []
+    for _, row in animation_df.iterrows():
+        frame_name = row["label"]
+        frames.append(go.Frame(
+            data=[go.Pie(
+                labels=labels,
+                values=[row["left_value"], row["center_value"], row["right_value"]],
+                marker=dict(
+                    colors=colors,
+                    line=dict(color="rgba(255,255,255,0.15)", width=2)
+                ),
+                textinfo="label+percent",
+                hovertemplate="<b>%{label}</b><br>비율: %{value:.1f}%<br><extra></extra>",
+                hole=0.35,
+                sort=False
+            )],
+            name=frame_name,
+            layout=go.Layout(
+                title=dict(
+                    text=f"{title_prefix} - {frame_name}",
+                    font=dict(
+                        size=CHART_THEME["title_font_size"],
+                        color=CHART_THEME["text_color"]
+                    ),
+                    x=0.5,
+                    xanchor="center"
+                ),
+                transition=dict(duration=transition_duration, easing=easing_function)
+            )
+        ))
+
+    fig.frames = frames
+
+    slider_steps = []
+    for frame in frames:
+        slider_steps.append({
+            "label": frame.name,
+            "method": "animate",
+            "args": [
+                [frame.name],
+                {
+                    "frame": {"duration": frame_duration, "redraw": True},
+                    "transition": {"duration": transition_duration, "easing": easing_function},
+                    "mode": "immediate"
+                }
+            ]
+        })
+
+    fig = apply_chart_theme(fig)
+
+    fig.update_layout(
+        title=dict(
+            text=f"{title_prefix} - {first_row['label']}",
+            font=dict(
+                size=CHART_THEME["title_font_size"],
+                color=CHART_THEME["text_color"]
+            ),
+            x=0.5,
+            xanchor="center"
+        ),
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.15,
+            xanchor="center",
+            x=0.5
+        ),
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "left",
+                "pad": {"r": 10, "t": 70},
+                "showactive": False,
+                "x": 0.0,
+                "y": 1.12,
+                "buttons": [
+                    {
+                        "label": "▶ 재생",
+                        "method": "animate",
+                        "args": [
+                            None,
+                            {
+                                "frame": {"duration": frame_duration, "redraw": True},
+                                "fromcurrent": True,
+                                "transition": {"duration": transition_duration, "easing": easing_function}
+                            }
+                        ]
+                    },
+                    {
+                        "label": "⏸ 정지",
+                        "method": "animate",
+                        "args": [
+                            [None],
+                            {
+                                "frame": {"duration": 0, "redraw": False},
+                                "mode": "immediate",
+                                "transition": {"duration": 0, "easing": easing_function}
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        sliders=[
+            {
+                "active": 0,
+                "y": -0.1,
+                "x": 0.1,
+                "len": 0.8,
+                "pad": {"t": 50, "b": 10},
+                "currentvalue": {
+                    "prefix": "날짜: ",
+                    "visible": True,
+                    "font": {
+                        "size": 12,
+                        "color": CHART_THEME["text_color"]
+                    }
+                },
+                "steps": slider_steps
+            }
+        ]
+    )
+
+    fig.update_traces(
+        sort=False,
+        hole=0.35,
+        marker=dict(
+            colors=colors,
+            line=dict(color="rgba(255,255,255,0.15)", width=2)
+        ),
+        textfont=dict(size=13)
+    )
+
+    return fig
+
+
 def create_user_political_journey_chart(
     df: pd.DataFrame,
     user_id: str

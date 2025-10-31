@@ -10,7 +10,10 @@ import streamlit as st
 
 from data_loader import load_political_score_history
 from processing.aggregators import aggregate_political_scores_by_date
-from visualizations.charts import create_time_series_chart
+from visualizations.charts import (
+    create_time_series_chart,
+    create_time_series_pie_animation,
+)
 
 
 def show():
@@ -96,13 +99,24 @@ def show():
         st.info(f"📅 표시 기간: {start_date.strftime('%Y-%m-%d')} ~ {end_date.strftime('%Y-%m-%d')}")
         
         # Create and display time series chart
-        fig = create_time_series_chart(
+        line_fig = create_time_series_chart(
             aggregated_df,
             date_range,
             view_type,
             category
         )
-        st.plotly_chart(fig, use_container_width=True)
+
+        pie_fig = create_time_series_pie_animation(
+            aggregated_df,
+            view_type,
+            category
+        )
+
+        tab_line, tab_pie = st.tabs(["선 그래프", "애니메이션 원그래프"])
+        with tab_line:
+            st.plotly_chart(line_fig, use_container_width=True)
+        with tab_pie:
+            st.plotly_chart(pie_fig, use_container_width=True)
         
         # Display additional information
         with st.expander("차트 사용 방법"):
@@ -113,6 +127,11 @@ def show():
             - **호버**: 데이터 포인트에 마우스를 올리면 상세 정보를 볼 수 있습니다
             - **범례**: 범례 항목을 클릭하여 특정 성향을 숨기거나 표시할 수 있습니다
             - **리셋**: 더블 클릭하여 원래 뷰로 돌아갈 수 있습니다
+
+            ### 애니메이션 원그래프
+            - **재생/정지**: 상단 버튼으로 날짜별 변화를 자동 재생하거나 멈출 수 있습니다
+            - **슬라이더**: 하단 슬라이더로 보고 싶은 날짜를 즉시 선택할 수 있습니다
+            - **호버**: 각 조각에 마우스를 올리면 해당 날짜의 비율을 확인할 수 있습니다
             
             ### 성향 설명
             - **진보**: 진보적 성향 점수 비율
