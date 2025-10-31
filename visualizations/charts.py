@@ -31,7 +31,7 @@ CHART_THEME = {
     "background_color": "rgba(0,0,0,0)",  # Transparent to adapt to theme
     "paper_color": "rgba(0,0,0,0)",  # Transparent to adapt to theme
     "grid_color": "#444444",  # Darker grid for better visibility in both modes
-    "text_color": "#FAFAFA",  # Light text for dark mode
+    "text_color": "#212529",  # Darker text for readability on light backgrounds
     "height": 500
 }
 
@@ -233,7 +233,7 @@ def create_time_series_chart(
             showarrow=False,
             font=dict(size=16)
         )
-        return apply_chart_theme(fig, "시간별 정치 성향 변화")
+        return apply_chart_theme(fig, "시간별 활성 유저 변화")
     
     # Category name mapping
     category_map = {
@@ -261,7 +261,7 @@ def create_time_series_chart(
                 showarrow=False,
                 font=dict(size=16)
             )
-            return apply_chart_theme(fig, f"{category_map.get(category, category)} - 시간별 정치 성향 변화")
+            return apply_chart_theme(fig, f"{category_map.get(category, category)} - 시간별 활성 유저 변화")
         
         # Sort by date
         category_data = category_data.sort_values("date")
@@ -306,7 +306,7 @@ def create_time_series_chart(
                           "<extra></extra>"
         ))
         
-        title = f"{category_map.get(category, category)} - 시간별 정치 성향 변화"
+        title = f"{category_map.get(category, category)} - 시간별 활성 유저 변화"
         
     else:
         # Show average across all categories
@@ -358,7 +358,7 @@ def create_time_series_chart(
                           "<extra></extra>"
         ))
         
-        title = "전체 카테고리 평균 - 시간별 정치 성향 변화"
+        title = "전체 카테고리 평균 - 시간별 활성 유저 변화"
     
     # Update layout with zoom and pan enabled
     fig.update_xaxes(

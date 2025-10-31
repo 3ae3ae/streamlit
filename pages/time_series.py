@@ -20,7 +20,7 @@ def show():
     This page shows time-series graphs with filters for date range (7/30 days),
     view type (category/average), and category selection.
     """
-    st.title("시간별 정치 성향 변화")
+    st.title("시간별 활성 유저 변화")
     st.markdown("시간에 따른 정치 성향 점수의 변화를 추적할 수 있습니다.")
     
     try:
