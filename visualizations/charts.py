@@ -104,6 +104,19 @@ def calculate_optimal_y_range(data: pd.Series) -> tuple[float, float]:
     return (y_min, y_max)
 
 
+def _hex_to_rgba(hex_color: str, alpha: float) -> str:
+    """
+    Convert a hex color string to an rgba string with the given alpha.
+    """
+    hex_color = hex_color.lstrip("#")
+    if len(hex_color) != 6:
+        raise ValueError(f"Invalid hex color: {hex_color}")
+    r = int(hex_color[0:2], 16)
+    g = int(hex_color[2:4], 16)
+    b = int(hex_color[4:6], 16)
+    return f"rgba({r}, {g}, {b}, {alpha})"
+
+
 def apply_chart_theme(fig: go.Figure, title: Optional[str] = None) -> go.Figure:
     """
     Apply consistent theme to all charts.
@@ -732,9 +745,8 @@ def create_user_political_journey_chart(
         return apply_chart_theme(fig, f"사용자 {user_id} 정치 성향 변화")
     
     # Sort by date
-    user_data = user_data.sort_values("createdAt")
+    user_data = user_data.sort_values("createdAt").reset_index(drop=True)
     
-    # Category name mapping
     category_map = {
         "politics": "정치",
         "economy": "경제",
@@ -743,103 +755,194 @@ def create_user_political_journey_chart(
         "technology": "기술",
         "international": "국제"
     }
-    
-    fig = go.Figure()
-    
-    # Add traces for each category/perspective combination using raw scores
-    categories = ["politics", "economy", "society", "culture", "technology", "international"]
+    categories = list(category_map.keys())
     perspective_styles = {
         "left": ("진보", COLORS["left"]),
         "center": ("중도", COLORS["center"]),
         "right": ("보수", COLORS["right"])
     }
-    category_dash_map = {
-        "politics": "solid",
-        "economy": "dash",
-        "society": "dot",
-        "culture": "dashdot",
-        "technology": "longdash",
-        "international": "longdashdot"
-    }
+    
+    tidy_frames: list[pd.DataFrame] = []
     score_columns: list[str] = []
     
     for cat in categories:
-        for perspective, (label, color) in perspective_styles.items():
+        for perspective in perspective_styles.keys():
             column_name = f"{cat}_{perspective}"
-            
             if column_name not in user_data.columns:
                 continue
             
-            column_series = user_data[column_name]
-            if column_series.dropna().empty:
+            valid = user_data.loc[user_data[column_name].notna(), ["createdAt", column_name]].copy()
+            if valid.empty:
                 continue
             
+            valid = valid.rename(columns={column_name: "score"})
+            valid["category"] = cat
+            valid["perspective"] = perspective
+            tidy_frames.append(valid)
             score_columns.append(column_name)
-            
-            fig.add_trace(go.Scatter(
-                x=user_data["createdAt"],
-                y=column_series,
-                mode="lines+markers",
-                name=f"{category_map.get(cat, cat)} - {label}",
-                line=dict(
-                    color=color,
-                    width=2,
-                    dash=category_dash_map.get(cat, "solid")
-                ),
-                marker=dict(size=6),
-                hovertemplate=f"<b>{category_map.get(cat, cat)} - {label}</b><br>" +
-                              "날짜: %{x|%Y-%m-%d}<br>" +
-                              "점수: %{y:.1f}<br>" +
-                              "<extra></extra>"
-            ))
     
-    # Add horizontal reference line at 50 (default/neutral baseline)
-    fig.add_hline(
-        y=50,
-        line_dash="dash",
-        line_color="gray",
-        annotation_text="기준 50",
-        annotation_position="right"
+    if not tidy_frames:
+        logger.warning(f"No score columns found for user {user_id}")
+        fig = go.Figure()
+        fig.add_annotation(
+            text="정치 성향 점수를 찾을 수 없습니다",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16)
+        )
+        return apply_chart_theme(fig, f"사용자 {user_id} 정치 성향 변화")
+    
+    score_columns = sorted(set(score_columns))
+    long_df = pd.concat(tidy_frames, ignore_index=True)
+    long_df["category_label"] = long_df["category"].map(category_map).fillna(long_df["category"])
+    long_df["perspective_label"] = long_df["perspective"].map(lambda key: perspective_styles.get(key, ("", ""))[0])
+    
+    # Soft smoothing for visual polish without hiding trend reversals
+    long_df = long_df.sort_values(["category", "perspective", "createdAt"])
+    long_df["smoothed_score"] = (
+        long_df.groupby(["category", "perspective"])["score"]
+        .transform(lambda s: s.ewm(span=min(len(s), 3), adjust=False).mean())
     )
     
-    # Update layout
-    fig.update_xaxes(
-        title="날짜",
-        type="date"
+    perspective_summary = (
+        long_df.groupby(["perspective", "perspective_label", "createdAt"])
+        .agg(
+            score_mean=("score", "mean"),
+            score_smoothed=("smoothed_score", "mean"),
+            score_min=("score", "min"),
+            score_max=("score", "max")
+        )
+        .reset_index()
     )
     
-    # Calculate optimal y-axis range based on all raw scores
+    fig = go.Figure()
+    
+    # Calculate optimal y-range across all score values
+    score_series = pd.Series([], dtype=float)
     if score_columns:
         score_values = user_data[score_columns].to_numpy().ravel()
         score_series = pd.Series(score_values).dropna()
-        if not score_series.empty:
-            y_min, y_max = calculate_optimal_y_range(score_series)
-            y_min = max(0, y_min)
-            y_max = min(100, y_max)
-            if y_max - y_min < 10:
-                midpoint = (y_min + y_max) / 2
-                y_min = max(0, midpoint - 5)
-                y_max = min(100, midpoint + 5)
-                if y_max - y_min < 10:
-                    y_max = min(100, y_min + 10)
-        else:
-            y_min, y_max = 0, 100
-    else:
-        y_min, y_max = 0, 100
     
-    fig.update_yaxes(
-        title="정치 성향 점수 (0~100)",
-        range=[y_min, y_max],
-        fixedrange=False  # Allow manual adjustment
+    if score_series.empty:
+        y_min, y_max = 0, 100
+    else:
+        y_min, y_max = calculate_optimal_y_range(score_series)
+        y_min = max(0, y_min)
+        y_max = min(100, y_max)
+        if y_max - y_min < 10:
+            midpoint = (y_min + y_max) / 2
+            y_min = max(0, midpoint - 5)
+            y_max = min(100, midpoint + 5)
+            if y_max - y_min < 10:
+                y_max = min(100, y_min + 10)
+    
+    for perspective_key, (perspective_label, base_color) in perspective_styles.items():
+        perspective_rows = long_df[long_df["perspective"] == perspective_key]
+        summary_rows = perspective_summary[perspective_summary["perspective"] == perspective_key]
+        
+        if perspective_rows.empty:
+            continue
+        
+        # Light category lines for additional context
+        for category_key in categories:
+            category_rows = perspective_rows[perspective_rows["category"] == category_key]
+            if category_rows.empty:
+                continue
+            
+            category_color = CATEGORY_COLORS.get(category_key, base_color)
+            fig.add_trace(
+                go.Scatter(
+                    x=category_rows["createdAt"],
+                    y=category_rows["smoothed_score"],
+                    mode="lines",
+                    line=dict(color=category_color, width=1.8),
+                    opacity=0.35,
+                    hovertemplate=(
+                        f"<b>{category_map.get(category_key, category_key)} · {perspective_label}</b><br>"
+                        "날짜: %{x|%Y-%m-%d}<br>"
+                        "점수(스무딩): %{y:.1f}<br>"
+                        "<extra></extra>"
+                    ),
+                    legendgroup=perspective_key,
+                    showlegend=False
+                )
+            )
+        
+        if not summary_rows.empty:
+            # Confidence band showing variation across categories
+            fig.add_trace(
+                go.Scatter(
+                    x=summary_rows["createdAt"],
+                    y=summary_rows["score_min"],
+                    mode="lines",
+                    line=dict(width=0),
+                    hoverinfo="skip",
+                    legendgroup=perspective_key,
+                    showlegend=False
+                )
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=summary_rows["createdAt"],
+                    y=summary_rows["score_max"],
+                    mode="lines",
+                    fill="tonexty",
+                    fillcolor=_hex_to_rgba(base_color, 0.18),
+                    hoverinfo="skip",
+                    legendgroup=perspective_key,
+                    showlegend=False
+                )
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=summary_rows["createdAt"],
+                    y=summary_rows["score_smoothed"],
+                    mode="lines+markers",
+                    name=f"{perspective_label} 평균",
+                    line=dict(color=base_color, width=3),
+                    marker=dict(size=5),
+                    customdata=summary_rows[["score_min", "score_max"]].to_numpy(),
+                    hovertemplate=(
+                        f"<b>{perspective_label}</b><br>"
+                        "날짜: %{x|%Y-%m-%d}<br>"
+                        "평균 점수: %{y:.1f}<br>"
+                        "당일 범위: %{customdata[0]:.1f} ~ %{customdata[1]:.1f}<br>"
+                        "<extra></extra>"
+                    ),
+                    legendgroup=perspective_key
+                )
+            )
+        
+    fig.add_hline(
+        y=50,
+        line_dash="dot",
+        line_color="#868E96",
+        annotation_text="기준 50",
+        annotation_position="top right"
     )
     
-    # Enable zoom and pan
     fig.update_layout(
         dragmode="zoom",
         hovermode="x unified"
     )
     
-    return apply_chart_theme(fig, f"사용자 {user_id} 정치 성향 변화")
+    fig.update_xaxes(title="날짜", type="date")
+    fig.update_yaxes(
+        title="정치 성향 점수 (0~100)",
+        range=[y_min, y_max],
+        fixedrange=False
+    )
+    
+    fig = apply_chart_theme(fig, f"사용자 {user_id} 정치 성향 변화")
+    fig.update_layout(
+        height=560,
+        margin=dict(t=80, b=40, l=60, r=40)
+    )
+    
+    return fig
 
 
 
@@ -1148,9 +1251,36 @@ def create_user_watch_category_bar_chart(
             showarrow=False,
             font=dict(size=16)
         )
-        return apply_chart_theme(fig, "최근 한달 시청 카테고리")
+        return apply_chart_theme(fig, "최근 한달 본 이슈 카테고리")
     
     data = category_df.copy()
+    # Identify rows lacking category metadata and remove them from the chart
+    missing_mask = data["category"].isna() | (data["category"] == "unknown")
+    missing_total = int(data.loc[missing_mask, "watch_count"].sum())
+    if missing_total:
+        logger.warning(
+            "Excluded %d watch records without category metadata from chart", missing_total
+        )
+    data = data.loc[~missing_mask].copy()
+
+    if data.empty:
+        fig = go.Figure()
+        message = (
+            "카테고리 정보가 누락된 이슈만 존재합니다"
+            if missing_total
+            else "최근 한달간 시청한 이슈가 없습니다"
+        )
+        fig.add_annotation(
+            text=message,
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16)
+        )
+        return apply_chart_theme(fig, "최근 한달 본 이슈 카테고리")
+
     data["category_label"] = data["category"].map(CATEGORY_LABELS).fillna(data["category"])
     
     fig = px.bar(
@@ -1163,19 +1293,20 @@ def create_user_watch_category_bar_chart(
     )
     
     fig.update_traces(
-        hovertemplate="<b>%{x}</b><br>시청 횟수: %{y}<extra></extra>",
+        hovertemplate="<b>%{x}</b><br>이슈 수: %{y}<extra></extra>",
         texttemplate="%{y}",
         textposition="outside"
     )
     
     fig.update_layout(
         xaxis_title="이슈 카테고리",
-        yaxis_title="시청 횟수",
+        yaxis_title="이슈 수",
         bargap=0.35
     )
     
-    fig = apply_chart_theme(fig, "최근 한달 시청 카테고리")
+    fig = apply_chart_theme(fig, "최근 한달 본 이슈 카테고리")
     fig.update_layout(showlegend=False)
+    
     return fig
 
 
@@ -1183,13 +1314,13 @@ def create_user_watch_daily_chart(
     daily_df: pd.DataFrame
 ) -> go.Figure:
     """
-    Create bar chart showing daily watch counts for the selected user.
+    Create bar chart showing daily issue counts for the selected user.
     
     Args:
         daily_df: DataFrame with columns 'date' and 'watch_count'
     
     Returns:
-        Plotly figure with daily watch counts
+        Plotly figure with daily issue counts
     """
     if daily_df.empty:
         logger.info("No daily watch data available for user chart")
@@ -1203,7 +1334,7 @@ def create_user_watch_daily_chart(
             showarrow=False,
             font=dict(size=16)
         )
-        return apply_chart_theme(fig, "일자별 시청 수")
+        return apply_chart_theme(fig, "일자별 본 이슈 수")
     
     data = daily_df.copy()
     data["date"] = pd.to_datetime(data["date"])
@@ -1217,14 +1348,14 @@ def create_user_watch_daily_chart(
     )
     
     fig.update_traces(
-        hovertemplate="<b>%{x|%Y-%m-%d}</b><br>시청 횟수: %{y}<extra></extra>",
+        hovertemplate="<b>%{x|%Y-%m-%d}</b><br>이슈 수: %{y}<extra></extra>",
         texttemplate="%{text}",
         textposition="outside"
     )
     
     fig.update_layout(
         xaxis_title="날짜",
-        yaxis_title="시청 횟수",
+        yaxis_title="이슈 수",
         bargap=0.2,
         margin=dict(l=40, r=20, t=60, b=40)
     )
@@ -1234,7 +1365,7 @@ def create_user_watch_daily_chart(
         tickangle=-45
     )
     
-    fig = apply_chart_theme(fig, "일자별 시청 수")
+    fig = apply_chart_theme(fig, "일자별 본 이슈 수")
     fig.update_layout(showlegend=False)
     return fig
 

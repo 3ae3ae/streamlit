@@ -138,7 +138,7 @@ def show():
     if not recent_activity.empty:
         label_map = {
             row["userId"]: (
-                f"{row['userId']} · 시청 {row['watch_count']}회 · "
+                f"{row['userId']} · 최근 본 이슈 {row['issue_variety']}개 · "
                 f"최근 {row['last_watch'].strftime('%Y-%m-%d')}"
             )
             for _, row in recent_activity.iterrows()
@@ -182,15 +182,14 @@ def show():
         st.info("사용자를 선택하거나 ID를 입력하면 상세 리포트를 볼 수 있습니다.")
         
         if not recent_activity.empty:
-            st.markdown("#### 최근 한달간 많이 시청한 사용자 Top 25")
+            st.markdown("#### 최근 한달간 많이 본 사용자 Top 25")
             preview_df = recent_activity.copy()
             preview_df["recent_watch"] = preview_df["last_watch"].dt.strftime("%Y-%m-%d %H:%M")
             preview_df = preview_df.rename(columns={
                 "userId": "사용자 ID",
-                "watch_count": "시청 횟수",
-                "issue_variety": "본 이슈 수",
+                "issue_variety": "최근 본 이슈 수",
                 "recent_watch": "최근 시청"
-            })[["사용자 ID", "시청 횟수", "본 이슈 수", "최근 시청"]]
+            })[["사용자 ID", "최근 본 이슈 수", "최근 시청"]]
             st.dataframe(preview_df, use_container_width=True, hide_index=True)
         return
     
@@ -232,14 +231,14 @@ def show():
         media_df=media_df
     )
     
-    total_watches = int(user_watch_recent.shape[0])
     unique_issues = int(user_watch_recent["issueId"].nunique())
     last_watch = user_watch_recent["watchedAt"].max()
     evaluation_total = int(user_evaluations.shape[0])
+    evaluated_issue_count = int(user_evaluations["issueId"].nunique())
     
     metrics_col1, metrics_col2, metrics_col3, metrics_col4 = st.columns(4)
-    metrics_col1.metric("총 시청 횟수", f"{total_watches:,}")
-    metrics_col2.metric("본 이슈 수", f"{unique_issues:,}")
+    metrics_col1.metric("최근 본 이슈 수", f"{unique_issues:,}")
+    metrics_col2.metric("평가한 이슈 수", f"{evaluated_issue_count:,}")
     metrics_col3.metric("제출한 평가 수", f"{evaluation_total:,}")
     metrics_col4.metric(
         "최근 시청 시점",
@@ -249,7 +248,7 @@ def show():
     chart_col1, chart_col2 = st.columns(2)
     
     with chart_col1:
-        st.subheader("카테고리별 시청 분포")
+        st.subheader("카테고리별 본 이슈 분포")
         if category_counts.empty:
             st.info("카테고리 정보를 찾을 수 없습니다.")
         else:
@@ -261,7 +260,7 @@ def show():
         evaluation_fig = create_user_evaluation_distribution_chart(evaluation_counts)
         st.plotly_chart(evaluation_fig, use_container_width=True)
     
-    st.subheader("일자별 시청 수")
+    st.subheader("일자별 본 이슈 수")
     daily_watch_fig = create_user_watch_daily_chart(daily_counts)
     st.plotly_chart(daily_watch_fig, use_container_width=True)
     
