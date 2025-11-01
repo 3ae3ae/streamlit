@@ -240,7 +240,8 @@ def create_political_preference_pie_chart(df: pd.DataFrame) -> go.Figure:
                       "비율: %{percent}<br>" +
                       "<extra></extra>",
         textinfo="label+percent",
-        textposition="auto"
+        textposition="auto",
+        textfont=dict(color="#FFFFFF")
     )])
     
     return apply_chart_theme(fig, "전체 사용자 정치 성향 분포")
@@ -1444,7 +1445,7 @@ def create_keyword_perspective_distribution_chart(
     top_n: int = 10
 ) -> go.Figure:
     """
-    Create a refined 100% stacked bar chart for keyword evaluation perspectives.
+    Create a stacked bar chart for keyword evaluation perspectives scaled by total counts.
     
     Args:
         keyword_eval_df: DataFrame with columns 'keyword', 'perspective', 'evaluation_count'
@@ -1535,7 +1536,7 @@ def create_keyword_perspective_distribution_chart(
         customdata = subset[["evaluation_count", "percentage", "total_count"]].to_numpy()
         
         fig.add_trace(go.Bar(
-            x=subset["percentage"],
+            x=subset["evaluation_count"],
             y=subset["keyword"].astype(str),
             orientation="h",
             name=label,
@@ -1557,9 +1558,11 @@ def create_keyword_perspective_distribution_chart(
     totals_df.columns = ["keyword", "total_count"]
     totals_df["keyword"] = pd.Categorical(totals_df["keyword"], categories=display_order, ordered=True)
     totals_df = totals_df.sort_values("keyword")
+    max_total = totals_df["total_count"].max()
+    label_offset = max(1, max_total * 0.04) if pd.notna(max_total) else 1
     
     fig.add_trace(go.Scatter(
-        x=[102] * len(totals_df),
+        x=totals_df["total_count"] + label_offset,
         y=totals_df["keyword"].astype(str),
         mode="text",
         text=[f"{value:,}회" for value in totals_df["total_count"]],
@@ -1570,7 +1573,7 @@ def create_keyword_perspective_distribution_chart(
     ))
     
     fig.update_layout(
-        xaxis_title="평가 비중 (%)",
+        xaxis_title="평가 횟수 (회)",
         yaxis_title=None,
         barmode="stack",
         bargap=0.12,
@@ -1580,7 +1583,11 @@ def create_keyword_perspective_distribution_chart(
         margin=dict(l=110, r=70, t=60, b=40)
     )
     
-    fig.update_xaxes(range=[0, 105], dtick=10, showgrid=True, griddash="dot")
+    fig.update_xaxes(
+        range=[0, max_total + label_offset * 2 if pd.notna(max_total) else 10],
+        showgrid=True,
+        griddash="dot"
+    )
     fig.update_yaxes(categoryorder="array", categoryarray=display_order)
     
     return apply_chart_theme(fig, "키워드별 평가 성향")
