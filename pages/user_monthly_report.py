@@ -296,3 +296,11 @@ def show():
             "evaluatedAt": "평가 시점"
         })[["이슈 ID", "이슈 제목", "카테고리", "평가 성향", "평가 시점"]]
         st.dataframe(evaluation_detail, use_container_width=True, hide_index=True)
+
+
+# Alias for backward compatibility with other modules
+show_user_monthly_report_page = show
+
+
+if __name__ == "__main__":
+    show()

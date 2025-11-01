@@ -744,51 +744,61 @@ def create_user_political_journey_chart(
         "international": "국제"
     }
     
-    # Category colors (optimized for dark mode)
-    category_colors = {
-        "politics": "#FF6B6B",
-        "economy": "#4DABF7",
-        "society": "#51CF66",
-        "culture": "#FFA94D",
-        "technology": "#CC5DE8",
-        "international": "#20C997"
-    }
-    
     fig = go.Figure()
     
-    # Add traces for each category (showing left, center, right scores)
+    # Add traces for each category/perspective combination using raw scores
     categories = ["politics", "economy", "society", "culture", "technology", "international"]
+    perspective_styles = {
+        "left": ("진보", COLORS["left"]),
+        "center": ("중도", COLORS["center"]),
+        "right": ("보수", COLORS["right"])
+    }
+    category_dash_map = {
+        "politics": "solid",
+        "economy": "dash",
+        "society": "dot",
+        "culture": "dashdot",
+        "technology": "longdash",
+        "international": "longdashdot"
+    }
+    score_columns: list[str] = []
     
     for cat in categories:
-        left_col = f"{cat}_left"
-        right_col = f"{cat}_right"
-        
-        if left_col not in user_data.columns:
-            continue
-        
-        # Calculate net score (left - right, with center as neutral)
-        # Positive = more left-leaning, Negative = more right-leaning
-        user_data[f"{cat}_net_score"] = user_data[left_col] - user_data[right_col]
-        
-        fig.add_trace(go.Scatter(
-            x=user_data["createdAt"],
-            y=user_data[f"{cat}_net_score"],
-            mode="lines+markers",
-            name=category_map.get(cat, cat),
-            line=dict(color=category_colors.get(cat, "#95A5A6"), width=2),
-            marker=dict(size=6),
-            hovertemplate=f"<b>{category_map.get(cat, cat)}</b><br>" +
-                          "날짜: %{x|%Y-%m-%d}<br>" +
-                          "진보-보수 점수: %{y:.1f}<br>" +
-                          "<extra></extra>"
-        ))
+        for perspective, (label, color) in perspective_styles.items():
+            column_name = f"{cat}_{perspective}"
+            
+            if column_name not in user_data.columns:
+                continue
+            
+            column_series = user_data[column_name]
+            if column_series.dropna().empty:
+                continue
+            
+            score_columns.append(column_name)
+            
+            fig.add_trace(go.Scatter(
+                x=user_data["createdAt"],
+                y=column_series,
+                mode="lines+markers",
+                name=f"{category_map.get(cat, cat)} - {label}",
+                line=dict(
+                    color=color,
+                    width=2,
+                    dash=category_dash_map.get(cat, "solid")
+                ),
+                marker=dict(size=6),
+                hovertemplate=f"<b>{category_map.get(cat, cat)} - {label}</b><br>" +
+                              "날짜: %{x|%Y-%m-%d}<br>" +
+                              "점수: %{y:.1f}<br>" +
+                              "<extra></extra>"
+            ))
     
-    # Add horizontal line at y=0 (neutral)
+    # Add horizontal reference line at 50 (default/neutral baseline)
     fig.add_hline(
-        y=0,
+        y=50,
         line_dash="dash",
         line_color="gray",
-        annotation_text="중립",
+        annotation_text="기준 50",
         annotation_position="right"
     )
     
@@ -798,24 +808,27 @@ def create_user_political_journey_chart(
         type="date"
     )
     
-    # Calculate optimal y-axis range based on all net scores
-    all_net_scores = []
-    for cat in categories:
-        net_score_col = f"{cat}_net_score"
-        if net_score_col in user_data.columns:
-            all_net_scores.extend(user_data[net_score_col].dropna().tolist())
-    
-    if all_net_scores:
-        net_scores_series = pd.Series(all_net_scores)
-        y_min, y_max = calculate_optimal_y_range(net_scores_series)
-        # Ensure the range includes 0 (neutral line)
-        y_min = min(y_min, 0)
-        y_max = max(y_max, 0)
+    # Calculate optimal y-axis range based on all raw scores
+    if score_columns:
+        score_values = user_data[score_columns].to_numpy().ravel()
+        score_series = pd.Series(score_values).dropna()
+        if not score_series.empty:
+            y_min, y_max = calculate_optimal_y_range(score_series)
+            y_min = max(0, y_min)
+            y_max = min(100, y_max)
+            if y_max - y_min < 10:
+                midpoint = (y_min + y_max) / 2
+                y_min = max(0, midpoint - 5)
+                y_max = min(100, midpoint + 5)
+                if y_max - y_min < 10:
+                    y_max = min(100, y_min + 10)
+        else:
+            y_min, y_max = 0, 100
     else:
-        y_min, y_max = -100, 100
+        y_min, y_max = 0, 100
     
     fig.update_yaxes(
-        title="정치 성향 점수 (진보 ← 0 → 보수)",
+        title="정치 성향 점수 (0~100)",
         range=[y_min, y_max],
         fixedrange=False  # Allow manual adjustment
     )
@@ -836,7 +849,7 @@ def create_media_support_chart(
     media_ids: Optional[list] = None
 ) -> go.Figure:
     """
-    Create cumulative support chart for one or multiple media sources.
+    Create 3-day rolling support ratio chart for one or multiple media sources.
     
     Args:
         df: DataFrame with media support scores over time
@@ -844,7 +857,7 @@ def create_media_support_chart(
         media_ids: List of media source IDs to display (for multi-media comparison)
         
     Returns:
-        Plotly figure with cumulative support chart
+        Plotly figure with support ratio chart
     """
     if df.empty:
         logger.warning("Empty dataframe provided for media support chart")
@@ -935,27 +948,32 @@ def create_media_support_chart(
             # Get media name
             media_name = media_subset["media_name"].iloc[0] if "media_name" in media_subset.columns else selected_id
             
-            # Aggregate all perspectives for this media (sum cumulative support across perspectives)
-            # Group by date and sum cumulative support
             aggregated = media_subset.groupby("date").agg({
-                "cumulative_support": "sum"
+                "window_supported_issue_count": "sum",
+                "window_issue_count": "sum"
             }).reset_index()
             
-            aggregated = aggregated.sort_values("date")
+            aggregated = aggregated[aggregated["window_issue_count"] > 0].sort_values("date")
+            aggregated["support_ratio"] = (
+                aggregated["window_supported_issue_count"] / aggregated["window_issue_count"] * 100
+            )
             
             # Use distinct color for each media
             color = media_colors[idx % len(media_colors)]
             
             fig.add_trace(go.Scatter(
                 x=aggregated["date"],
-                y=aggregated["cumulative_support"],
+                y=aggregated["support_ratio"],
                 mode="lines+markers",
                 name=media_name,
                 line=dict(color=color, width=2),
                 marker=dict(size=6),
+                customdata=aggregated[["window_supported_issue_count", "window_issue_count"]].to_numpy(),
                 hovertemplate=f"<b>{media_name}</b><br>" +
                               "날짜: %{x|%Y-%m-%d}<br>" +
-                              "총 누적 지지도: %{y}<br>" +
+                              "3일 지지율: %{y:.1f}%<br>" +
+                              "3일 지지 이슈 수: %{customdata[0]:.0f}<br>" +
+                              "3일 전체 이슈 수: %{customdata[1]:.0f}<br>" +
                               "<extra></extra>"
             ))
         
@@ -972,18 +990,23 @@ def create_media_support_chart(
             if not perspective_data.empty:
                 fig.add_trace(go.Scatter(
                     x=perspective_data["date"],
-                    y=perspective_data["cumulative_support"],
+                    y=perspective_data["support_ratio"],
                     mode="lines+markers",
                     name=perspective_map.get(perspective, perspective),
                     line=dict(color=COLORS.get(perspective, "#95A5A6"), width=2),
                     marker=dict(size=6),
+                    customdata=perspective_data[
+                        ["window_supported_issue_count", "window_issue_count"]
+                    ].to_numpy(),
                     hovertemplate=f"<b>{perspective_map.get(perspective, perspective)}</b><br>" +
                                   "날짜: %{x|%Y-%m-%d}<br>" +
-                                  "누적 지지도: %{y}<br>" +
+                                  "3일 지지율: %{y:.1f}%<br>" +
+                                  "3일 지지 이슈 수: %{customdata[0]:.0f}<br>" +
+                                  "3일 전체 이슈 수: %{customdata[1]:.0f}<br>" +
                                   "<extra></extra>"
                 ))
         
-        title = f"{media_name} - 누적 지지도"
+        title = f"{media_name} - 3일 지지율"
     
     # Update layout
     fig.update_xaxes(
@@ -991,17 +1014,23 @@ def create_media_support_chart(
         type="date"
     )
     
-    # Calculate optimal y-axis range based on cumulative support data
-    all_support_values = media_data["cumulative_support"].dropna()
+    # Calculate optimal y-axis range based on support ratio data
+    all_support_values = media_data["support_ratio"].dropna()
     if not all_support_values.empty:
         y_min, y_max = calculate_optimal_y_range(all_support_values)
-        # Ensure y_min is at least 0 for cumulative data
         y_min = max(0, y_min)
+        y_max = min(100, y_max)
+        if y_max - y_min < 10:
+            midpoint = (y_min + y_max) / 2
+            y_min = max(0, midpoint - 5)
+            y_max = min(100, midpoint + 5)
+            if y_max - y_min < 10:
+                y_max = min(100, y_min + 10)
     else:
         y_min, y_max = 0, 100
     
     fig.update_yaxes(
-        title="누적 지지도",
+        title="3일 지지율 (%)",
         range=[y_min, y_max],
         fixedrange=False  # Allow manual adjustment
     )

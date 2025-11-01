@@ -219,13 +219,13 @@ def calculate_media_support_scores(
     media_df: pd.DataFrame
 ) -> pd.DataFrame:
     """
-    Calculate cumulative support scores for media sources based on user evaluations.
+    Calculate 3-day rolling support ratios for media sources.
     
     Logic:
-    1. When a user agrees with a specific perspective (left/center/right) on an issue
-    2. Find all media sources that covered that issue with the same perspective
-    3. Attribute +1 support to those media sources
-    4. Calculate cumulative support over time
+    1. Map each issue source to a left/center/right bucket using its perspective.
+    2. Count daily issue exposure per media and bucket.
+    3. Mark issues that received supporting evaluations (user perspective matches mapped bucket).
+    4. For each media/bucket, compute a 3-day rolling ratio of supported issues over total issues.
     
     Args:
         evaluations_df: DataFrame with user issue evaluations (from load_issue_evaluations)
@@ -236,41 +236,67 @@ def calculate_media_support_scores(
         DataFrame with columns:
             - media_id: str
             - media_name: str
-            - date: datetime
+            - date: datetime (normalized to day)
             - perspective: str (left, center, right)
-            - support_count: int (support on that date)
-            - cumulative_support: int (cumulative support up to that date)
+            - daily_issue_count: int
+            - daily_supported_issue_count: int
+            - window_issue_count: float (3-day rolling sum of issues)
+            - window_supported_issue_count: float (3-day rolling sum of supported issues)
+            - support_ratio: float (percentage, 0~100)
     """
     if evaluations_df.empty or issues_df.empty:
         logger.warning("Empty evaluations or issues dataframe provided")
         return pd.DataFrame()
     
-    # Validate required columns
-    if "issueId" not in evaluations_df.columns or "perspective" not in evaluations_df.columns:
+    required_eval_cols = {"issueId", "perspective", "evaluatedAt"}
+    if not required_eval_cols.issubset(evaluations_df.columns):
         logger.error("Required columns missing in evaluations dataframe")
         return pd.DataFrame()
     
-    if "evaluatedAt" not in evaluations_df.columns:
-        logger.error("evaluatedAt column missing in evaluations dataframe")
-        return pd.DataFrame()
+    perspective_bucket_map = {
+        "left": "left",
+        "center_left": "left",
+        "center": "center",
+        "center_right": "right",
+        "right": "right"
+    }
     
-    # Prepare issues data with sources
     issues_with_sources = []
     for _, issue in issues_df.iterrows():
         issue_id = issue.get("_id")
-        sources = issue.get("sources", [])
+        if pd.isna(issue_id):
+            continue
         
+        issue_date = issue.get("createdAt") or issue.get("updatedAt")
+        if pd.isna(issue_date):
+            continue
+        issue_date = pd.to_datetime(issue_date).normalize()
+        
+        sources = issue.get("sources", [])
         if not sources or not isinstance(sources, list):
             continue
         
         for source in sources:
-            if isinstance(source, dict):
-                issues_with_sources.append({
-                    "issue_id": str(issue_id),
-                    "media_id": source.get("_id"),
-                    "media_name": source.get("name"),
-                    "media_perspective": source.get("perspective")
-                })
+            if not isinstance(source, dict):
+                continue
+            
+            media_id = source.get("_id")
+            if media_id is None:
+                continue
+            
+            media_name = source.get("name") or media_id
+            media_perspective = source.get("perspective")
+            bucket = perspective_bucket_map.get(media_perspective)
+            if bucket is None:
+                continue
+            
+            issues_with_sources.append({
+                "issue_id": str(issue_id),
+                "media_id": str(media_id),
+                "media_name": media_name,
+                "issue_date": issue_date,
+                "perspective_bucket": bucket
+            })
     
     if not issues_with_sources:
         logger.warning("No issue sources found")
@@ -278,8 +304,6 @@ def calculate_media_support_scores(
     
     issues_sources_df = pd.DataFrame(issues_with_sources)
     
-    # Merge evaluations with issue sources
-    # Match when user's perspective matches media's perspective
     merged = evaluations_df.merge(
         issues_sources_df,
         left_on="issueId",
@@ -287,54 +311,90 @@ def calculate_media_support_scores(
         how="inner"
     )
     
-    # Map perspectives to match
-    # User perspective: left, center, right
-    # Media perspective: left, center_left, center, center_right, right
-    # Mapping: left -> left, center_left
-    #          center -> center
-    #          right -> center_right, right
-    
-    def perspectives_match(user_perspective, media_perspective):
-        if user_perspective == "left":
-            return media_perspective in ["left", "center_left"]
-        elif user_perspective == "center":
-            return media_perspective == "center"
-        elif user_perspective == "right":
-            return media_perspective in ["center_right", "right"]
-        return False
-    
-    merged["match"] = merged.apply(
-        lambda row: perspectives_match(row["perspective"], row["media_perspective"]),
-        axis=1
-    )
-    
-    # Filter only matching evaluations
+    merged["match"] = merged["perspective"] == merged["perspective_bucket"]
     matched = merged[merged["match"]].copy()
     
     if matched.empty:
         logger.warning("No matching evaluations found")
         return pd.DataFrame()
     
-    # Extract date from evaluatedAt
-    matched["date"] = matched["evaluatedAt"].dt.date
-    matched["date"] = pd.to_datetime(matched["date"])
+    matched["support_date"] = pd.to_datetime(matched["evaluatedAt"]).dt.normalize()
+    matched = matched.dropna(subset=["support_date"])
+    matched["media_id"] = matched["media_id"].astype(str)
+    matched["issue_id"] = matched["issue_id"].astype(str)
+    matched["media_name"] = matched["media_name"].astype(str)
     
-    # Count support per media per date per perspective
-    support_counts = matched.groupby(
-        ["media_id", "media_name", "date", "perspective"]
-    ).size().to_frame(name="support_count").reset_index()
+    support_events = matched[
+        ["media_id", "media_name", "perspective_bucket", "issue_id", "support_date"]
+    ].copy()
+    support_events = support_events.rename(columns={"perspective_bucket": "perspective"})
     
-    # Sort by media and date
-    support_counts = support_counts.sort_values(["media_id", "perspective", "date"])
+    exposures = issues_sources_df.rename(columns={"perspective_bucket": "perspective"})[
+        ["media_id", "media_name", "perspective", "issue_id", "issue_date"]
+    ]
     
-    # Calculate cumulative support for each media and perspective
-    support_counts["cumulative_support"] = support_counts.groupby(
-        ["media_id", "perspective"]
-    )["support_count"].cumsum()
+    exposure_counts = exposures.groupby(
+        ["media_id", "media_name", "perspective", "issue_date"]
+    )["issue_id"].nunique().reset_index(name="daily_issue_count")
     
-    logger.info(f"Calculated support scores for {support_counts['media_id'].nunique()} media sources")
+    support_daily = support_events.groupby(
+        ["media_id", "media_name", "perspective", "support_date"]
+    )["issue_id"].nunique().reset_index(name="daily_supported_issue_count")
     
-    return support_counts
+    result_frames = []
+    
+    for (media_id, media_name, perspective), exposure_group in exposure_counts.groupby(
+        ["media_id", "media_name", "perspective"]
+    ):
+        exposure_group = exposure_group.sort_values("issue_date")
+        support_group = support_daily[
+            (support_daily["media_id"] == media_id) &
+            (support_daily["perspective"] == perspective)
+        ].sort_values("support_date")
+        
+        start_date = exposure_group["issue_date"].min()
+        end_candidates = [exposure_group["issue_date"].max()]
+        if not support_group.empty:
+            end_candidates.append(support_group["support_date"].max())
+        end_date = max(end_candidates)
+        
+        date_index = pd.date_range(start=start_date, end=end_date, freq="D")
+        exposure_series = exposure_group.set_index("issue_date")["daily_issue_count"].reindex(date_index, fill_value=0)
+        support_series = support_group.set_index("support_date")["daily_supported_issue_count"].reindex(date_index, fill_value=0)
+        
+        window_issue_count = exposure_series.rolling(window=3, min_periods=1).sum()
+        window_supported_issue_count = support_series.rolling(window=3, min_periods=1).sum()
+        
+        support_ratio = pd.Series(0.0, index=date_index)
+        non_zero_mask = window_issue_count > 0
+        support_ratio[non_zero_mask] = (
+            window_supported_issue_count[non_zero_mask] / window_issue_count[non_zero_mask] * 100
+        )
+        
+        combo_frame = pd.DataFrame({
+            "media_id": media_id,
+            "media_name": media_name,
+            "perspective": perspective,
+            "date": date_index,
+            "daily_issue_count": exposure_series.values,
+            "daily_supported_issue_count": support_series.values,
+            "window_issue_count": window_issue_count.values,
+            "window_supported_issue_count": window_supported_issue_count.values,
+            "support_ratio": support_ratio.values
+        })
+        result_frames.append(combo_frame)
+    
+    if not result_frames:
+        logger.warning("Unable to calculate media support ratios")
+        return pd.DataFrame()
+    
+    result = pd.concat(result_frames, ignore_index=True)
+    result = result[result["window_issue_count"] > 0]
+    result = result.sort_values(["media_id", "perspective", "date"]).reset_index(drop=True)
+    
+    logger.info(f"Calculated support ratios for {result['media_id'].nunique()} media sources")
+    
+    return result
 
 
 def get_recent_issues(

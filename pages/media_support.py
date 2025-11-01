@@ -1,6 +1,6 @@
 """
 Media source support page.
-Displays cumulative support graphs for media sources based on user evaluations.
+Displays rolling support ratio charts for media sources based on user evaluations.
 """
 
 import logging
@@ -16,11 +16,11 @@ def show():
     """
     Display the media source support page.
     
-    This page shows cumulative support graphs for media sources over time,
+    This page shows rolling support ratio graphs for media sources,
     with a clickable interface for selecting media sources.
     """
     st.title("언론사 지지도 분석")
-    st.markdown("사용자 평가를 기반으로 각 언론사의 누적 지지도를 확인할 수 있습니다.")
+    st.markdown("사용자 평가를 기반으로 최근 3일간의 언론사 지지율 변화를 확인할 수 있습니다.")
     
     try:
         # Load data
@@ -42,7 +42,7 @@ def show():
             return
         
         # Calculate media support scores
-        with st.spinner("언론사 지지도를 계산하는 중..."):
+        with st.spinner("언론사 지지율을 계산하는 중..."):
             support_df = calculate_media_support_scores(
                 evaluations_df,
                 issues_df,
@@ -50,17 +50,17 @@ def show():
             )
         
         if support_df.empty:
-            st.warning("언론사 지지도 데이터를 계산할 수 없습니다. 평가 데이터를 확인해주세요.")
+            st.warning("언론사 지지율 데이터를 계산할 수 없습니다. 평가 데이터를 확인해주세요.")
             return
         
         # Get unique media sources with support data
         media_with_support = support_df[["media_id", "media_name"]].drop_duplicates()
         
         if media_with_support.empty:
-            st.warning("지지도 데이터가 있는 언론사가 없습니다.")
+            st.warning("지지율 데이터가 있는 언론사가 없습니다.")
             return
         
-        st.info(f"📊 총 {len(media_with_support)}개 언론사의 지지도 데이터가 있습니다.")
+        st.info(f"📊 총 {len(media_with_support)}개 언론사의 지지율 데이터가 있습니다.")
         
         # Initialize session state for selected media
         if "selected_media_ids" not in st.session_state:
@@ -76,7 +76,7 @@ def show():
             "보기 모드",
             options=["단일 언론사", "다중 언론사 비교"],
             horizontal=True,
-            help="단일 언론사: 성향별 지지도 표시 | 다중 언론사: 여러 언론사 비교",
+            help="단일 언론사: 성향별 지지율 표시 | 다중 언론사: 여러 언론사 지지율 비교",
             index=0 if st.session_state.media_view_mode == "단일 언론사" else 1
         )
         
@@ -106,13 +106,22 @@ def show():
                 media_id = row["media_id"]
                 media_name = row["media_name"]
                 
-                # Calculate total support for this media
+                # Calculate recent support ratio for this media
                 media_support = support_df[support_df["media_id"] == media_id]
-                total_support = 0
+                recent_ratio = None
                 if not media_support.empty:
-                    total_support = media_support["cumulative_support"].max()
-                    if pd.isna(total_support):
-                        total_support = 0
+                    media_support = media_support.sort_values("date")
+                    latest_date = media_support["date"].max()
+                    latest_rows = media_support[media_support["date"] == latest_date]
+                    numerator = latest_rows["window_supported_issue_count"].sum()
+                    denominator = latest_rows["window_issue_count"].sum()
+                    if denominator > 0:
+                        recent_ratio = (numerator / denominator) * 100
+                
+                if recent_ratio is not None and pd.notna(recent_ratio):
+                    ratio_caption = f"{recent_ratio:.1f}%"
+                else:
+                    ratio_caption = "데이터 없음"
                 
                 # Check if this media is currently selected
                 is_selected = media_id in st.session_state.selected_media_ids
@@ -147,7 +156,7 @@ def show():
                         st.rerun()
                 
                 with col2:
-                    st.caption(f"지지도: {total_support:,}")
+                    st.caption(f"최근 3일 지지율: {ratio_caption}")
                 
                 # Add separator
                 if idx < len(sorted_media):
@@ -173,24 +182,40 @@ def show():
                 media_data = support_df[support_df["media_id"].isin(selected_media_ids)]
                 
                 if media_data.empty:
-                    st.warning("선택한 언론사에 대한 지지도 데이터가 없습니다.")
+                    st.warning("선택한 언론사에 대한 지지율 데이터가 없습니다.")
                     return
                 
                 # Display aggregate statistics
                 st.markdown("#### 전체 통계")
                 col1, col2, col3 = st.columns(3)
                 
-                # Calculate total support across all selected media
-                total_support = 0
+                latest_ratios = []
                 for media_id in selected_media_ids:
                     media_subset = support_df[support_df["media_id"] == media_id]
-                    if not media_subset.empty:
-                        max_support = media_subset["cumulative_support"].max()
-                        total_support += max_support if pd.notna(max_support) else 0
+                    if media_subset.empty:
+                        continue
+                    
+                    media_subset = media_subset.sort_values("date")
+                    latest_date = media_subset["date"].max()
+                    latest_rows = media_subset[media_subset["date"] == latest_date]
+                    numerator = latest_rows["window_supported_issue_count"].sum()
+                    denominator = latest_rows["window_issue_count"].sum()
+                    
+                    if denominator > 0:
+                        latest_ratios.append((numerator / denominator) * 100)
+                
+                avg_ratio = sum(latest_ratios) / len(latest_ratios) if latest_ratios else None
+                max_ratio = max(latest_ratios) if latest_ratios else None
                 
                 col1.metric("선택된 언론사 수", len(selected_media_ids))
-                col2.metric("총 누적 지지도", f"{total_support:,}")
-                col3.metric("평균 지지도", f"{total_support // len(selected_media_ids):,}" if len(selected_media_ids) > 0 else "0")
+                col2.metric(
+                    "평균 3일 지지율",
+                    f"{avg_ratio:.1f}%" if avg_ratio is not None else "데이터 없음"
+                )
+                col3.metric(
+                    "최고 3일 지지율",
+                    f"{max_ratio:.1f}%" if max_ratio is not None else "데이터 없음"
+                )
                 
                 # Create and display comparison chart
                 with st.spinner("비교 차트를 생성하는 중..."):
@@ -203,11 +228,22 @@ def show():
                     for media_id in selected_media_ids:
                         media_subset = support_df[support_df["media_id"] == media_id]
                         if not media_subset.empty:
+                            media_subset = media_subset.sort_values("date")
                             media_name = media_subset["media_name"].iloc[0]
-                            max_support = media_subset["cumulative_support"].max()
+                            latest_date = media_subset["date"].max()
+                            latest_rows = media_subset[media_subset["date"] == latest_date]
+                            numerator = latest_rows["window_supported_issue_count"].sum()
+                            denominator = latest_rows["window_issue_count"].sum()
+                            
+                            ratio_text = "데이터 없음"
+                            issues_text = "-"
+                            if denominator > 0:
+                                ratio_text = f"{(numerator / denominator) * 100:.1f}%"
+                                issues_text = f"{int(denominator):,}"
                             
                             st.markdown(f"**{media_name}**")
-                            st.write(f"총 누적 지지도: {max_support:,}")
+                            st.write(f"최근 3일 지지율: {ratio_text}")
+                            st.write(f"최근 3일 전체 이슈 수: {issues_text}")
                             st.divider()
                 
             else:
@@ -228,20 +264,32 @@ def show():
                 if media_data.empty:
                     media_info = media_with_support[media_with_support["media_id"] == selected_media_id]
                     media_name = media_info.iloc[0]["media_name"] if not media_info.empty else selected_media_id
-                    st.warning(f"언론사 '{media_name}'에 대한 지지도 데이터가 없습니다.")
+                    st.warning(f"언론사 '{media_name}'에 대한 지지율 데이터를 찾을 수 없습니다.")
                     return
                 
                 # Display statistics
                 col1, col2, col3 = st.columns(3)
                 
-                # Calculate total support by perspective
-                left_support = media_data[media_data["perspective"] == "left"]["cumulative_support"].max() if not media_data[media_data["perspective"] == "left"].empty else 0
-                center_support = media_data[media_data["perspective"] == "center"]["cumulative_support"].max() if not media_data[media_data["perspective"] == "center"].empty else 0
-                right_support = media_data[media_data["perspective"] == "right"]["cumulative_support"].max() if not media_data[media_data["perspective"] == "right"].empty else 0
+                perspective_labels = [
+                    ("left", "진보 3일 지지율"),
+                    ("center", "중도 3일 지지율"),
+                    ("right", "보수 3일 지지율")
+                ]
+                columns = [col1, col2, col3]
                 
-                col1.metric("진보 지지도", f"{left_support:,}")
-                col2.metric("중도 지지도", f"{center_support:,}")
-                col3.metric("보수 지지도", f"{right_support:,}")
+                for (perspective_key, label), column in zip(perspective_labels, columns):
+                    perspective_data = media_data[media_data["perspective"] == perspective_key].sort_values("date")
+                    if perspective_data.empty:
+                        column.metric(label, "데이터 없음")
+                        continue
+                    
+                    last_row = perspective_data.iloc[-1]
+                    ratio_value = last_row.get("support_ratio")
+                    
+                    if ratio_value is not None and pd.notna(ratio_value):
+                        column.metric(label, f"{ratio_value:.1f}%")
+                    else:
+                        column.metric(label, "데이터 없음")
                 
                 # Create and display chart
                 with st.spinner("차트를 생성하는 중..."):
@@ -250,29 +298,29 @@ def show():
                 st.plotly_chart(fig, width="stretch")
             
             # Display additional information
-            with st.expander("지지도 계산 방법"):
+            with st.expander("지지율 계산 방법"):
                 st.markdown("""
-                ### 지지도 계산 로직
-                언론사의 지지도는 다음과 같이 계산됩니다:
+                ### 지지율 계산 로직
+                언론사의 지지율은 다음 단계를 통해 산출됩니다:
                 
-                1. **사용자 평가**: 사용자가 특정 이슈에 대해 진보/중도/보수 중 하나의 성향에 동의
-                2. **언론사 매칭**: 해당 이슈를 보도한 언론사 중 동일한 성향의 언론사를 찾음
-                3. **지지도 증가**: 매칭된 언론사의 해당 성향 지지도에 +1
-                4. **누적 계산**: 시간에 따라 지지도를 누적하여 표시
+                1. **사용자 평가**: 사용자가 특정 이슈에서 동의한 정치 성향(진보/중도/보수)을 수집합니다.
+                2. **언론사 매칭**: 동일한 성향으로 이슈를 보도한 언론사를 매칭합니다.
+                3. **이슈 집계**: 해당 언론사가 최근 3일 동안 다룬 이슈 수와 지지를 받은 이슈 수를 계산합니다.
+                4. **비율 계산**: 지지를 받은 이슈 수 ÷ 전체 이슈 수 × 100으로 3일 지지율(%)을 구합니다.
                 
-                ### 성향별 지지도
-                - **진보 지지도**: 진보 성향 이슈에 대한 사용자 동의 기반
-                - **중도 지지도**: 중도 성향 이슈에 대한 사용자 동의 기반
-                - **보수 지지도**: 보수 성향 이슈에 대한 사용자 동의 기반
+                ### 성향별 지지율
+                - **진보 지지율**: 진보·중도진보 성향 보도를 지지한 이슈 비율
+                - **중도 지지율**: 중도 성향 보도를 지지한 이슈 비율
+                - **보수 지지율**: 중도보수·보수 성향 보도를 지지한 이슈 비율
                 
                 ### 차트 해석
-                - 그래프가 가파르게 상승하면 해당 기간에 많은 지지를 받았음을 의미
-                - 평평한 구간은 지지도 변화가 없는 기간
-                - 성향별로 다른 색상으로 표시되어 비교가 용이
+                - 그래프 상승: 최근 3일 동안 지지 비율이 높아졌음을 의미합니다.
+                - 그래프 하락: 최근 사용자 지지가 감소했음을 의미합니다.
+                - 평평한 구간: 최근 3일간 지지율 변화가 없음을 의미합니다.
                 """)
             
             # Display recent support events
-            with st.expander("최근 지지도 변화"):
+            with st.expander("최근 지지율 변화"):
                 recent_data = media_data.sort_values("date", ascending=False).head(10)
                 
                 st.markdown("### 최근 10개 기록")
@@ -280,8 +328,11 @@ def show():
                 for _, row in recent_data.iterrows():
                     date = row["date"].strftime("%Y-%m-%d")
                     perspective = row["perspective"]
-                    support_count = row["support_count"]
-                    cumulative = row["cumulative_support"]
+                    ratio_value = row.get("support_ratio")
+                    window_supported = row.get("window_supported_issue_count")
+                    window_total = row.get("window_issue_count")
+                    daily_supported = row.get("daily_supported_issue_count")
+                    daily_total = row.get("daily_issue_count")
                     
                     perspective_label = {
                         "left": "진보",
@@ -289,7 +340,23 @@ def show():
                         "right": "보수"
                     }.get(perspective, perspective)
                     
-                    st.write(f"**{date}** - {perspective_label}: +{support_count} (누적: {cumulative:,})")
+                    ratio_text = f"{ratio_value:.1f}%" if ratio_value is not None and pd.notna(ratio_value) else "데이터 없음"
+                    window_text = "-"
+                    if window_total is not None and pd.notna(window_total) and window_total > 0:
+                        supported_val = int(window_supported) if window_supported is not None and pd.notna(window_supported) else 0
+                        total_val = int(window_total)
+                        window_text = f"{supported_val:,}/{total_val:,}"
+                    
+                    daily_text = "-"
+                    if daily_total is not None and pd.notna(daily_total) and daily_total > 0:
+                        daily_supported_val = int(daily_supported) if daily_supported is not None and pd.notna(daily_supported) else 0
+                        daily_total_val = int(daily_total)
+                        daily_text = f"{daily_supported_val:,}/{daily_total_val:,}"
+                    
+                    st.write(
+                        f"**{date}** - {perspective_label}: {ratio_text} "
+                        f"(3일 지지 이슈 {window_text}, 일일 지지 {daily_text})"
+                    )
         else:
             st.info("👆 위의 목록에서 언론사를 클릭하여 선택하세요.")
             
@@ -298,13 +365,13 @@ def show():
                 **다중 언론사 비교 모드**
                 - 여러 언론사를 클릭하여 선택할 수 있습니다 (최대 7개)
                 - 선택된 언론사를 다시 클릭하면 선택이 해제됩니다
-                - 선택된 언론사들의 지지도를 한 차트에서 비교할 수 있습니다
+                - 선택된 언론사들의 지지율을 한 차트에서 비교할 수 있습니다
                 """)
             else:
                 st.markdown("""
                 **단일 언론사 모드**
                 - 하나의 언론사를 클릭하여 선택할 수 있습니다
-                - 선택된 언론사의 성향별 지지도를 확인할 수 있습니다
+                - 선택된 언론사의 성향별 지지율을 확인할 수 있습니다
                 """)
         
     except FileNotFoundError as e:
