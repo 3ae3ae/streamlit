@@ -273,6 +273,150 @@ def count_evaluations_by_perspective(
     return perspective_counts
 
 
+def filter_user_comment_likes(
+    likes_df: pd.DataFrame,
+    user_id: str,
+    days: int = 30,
+    reference_date: Optional[datetime] = None
+) -> pd.DataFrame:
+    """
+    Filter comment likes for the target user in the recent window.
+    
+    Args:
+        likes_df: DataFrame from load_user_comment_likes
+        user_id: Target user ID
+        days: Look-back window in days
+        reference_date: Optional anchor date (defaults to now)
+    
+    Returns:
+        Filtered DataFrame sorted by likedAt (descending)
+    """
+    if likes_df.empty:
+        return pd.DataFrame()
+    
+    required_cols = {"userId", "likedAt"}
+    if not required_cols.issubset(likes_df.columns):
+        logger.warning("Comment likes dataframe missing required columns")
+        return pd.DataFrame()
+    
+    likes_df = _ensure_datetime(likes_df, "likedAt")
+    
+    start_date, end_date = _get_time_window(days, reference_date)
+    
+    user_likes = likes_df[likes_df["userId"] == user_id].copy()
+    if user_likes.empty:
+        return pd.DataFrame()
+    
+    filtered = user_likes[
+        (user_likes["likedAt"] >= start_date) &
+        (user_likes["likedAt"] <= end_date)
+    ].copy()
+    
+    if filtered.empty:
+        return filtered
+    
+    return filtered.sort_values("likedAt", ascending=False)
+
+
+def count_comment_likes_by_perspective(
+    likes_df: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Count how many liked comments fall into each perspective bucket.
+    
+    Args:
+        likes_df: Filtered likes dataframe
+    
+    Returns:
+        DataFrame with columns:
+            - perspective
+            - like_count
+    """
+    if likes_df.empty or "perspective" not in likes_df.columns:
+        return pd.DataFrame()
+    
+    perspective_counts = (
+        likes_df["perspective"]
+        .fillna("unknown")
+        .value_counts()
+        .rename_axis("perspective")
+        .reset_index(name="like_count")
+    )
+    return perspective_counts
+
+
+def build_comment_like_details(
+    likes_df: pd.DataFrame,
+    comments_df: pd.DataFrame,
+    issues_df: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Enrich liked comment records with comment content and issue metadata.
+    
+    Args:
+        likes_df: Filtered likes dataframe
+        comments_df: DataFrame from load_issue_comments
+        issues_df: DataFrame from load_issues
+    
+    Returns:
+        DataFrame sorted by likedAt (descending) with columns:
+            - commentId
+            - likedAt
+            - perspective
+            - issueId
+            - issue_title
+            - comment_content
+            - category
+    """
+    if likes_df.empty:
+        return pd.DataFrame()
+    
+    likes_df = _ensure_datetime(likes_df, "likedAt")
+    details = likes_df.copy()
+    
+    if not comments_df.empty and "_id" in comments_df.columns:
+        comment_meta = comments_df[["_id", "issueId", "content", "perspective"]].rename(
+            columns={
+                "_id": "commentId",
+                "perspective": "comment_perspective",
+                "content": "comment_content"
+            }
+        )
+        details = details.merge(comment_meta, on="commentId", how="left")
+    else:
+        details["issueId"] = None
+        details["comment_content"] = None
+        details["comment_perspective"] = None
+    
+    if not issues_df.empty and "_id" in issues_df.columns:
+        issues_meta = issues_df[["_id", "title", "category"]].rename(
+            columns={"_id": "issueId", "title": "issue_title"}
+        )
+        details = details.merge(issues_meta, on="issueId", how="left")
+    else:
+        details["issue_title"] = None
+        details["category"] = None
+    
+    details["issue_title"] = details["issue_title"].fillna("제목 정보 없음")
+    details["comment_content"] = details["comment_content"].fillna("내용을 불러올 수 없습니다.")
+    details["category"] = details["category"].fillna("unknown")
+    
+    ordered_cols = [
+        "commentId",
+        "likedAt",
+        "perspective",
+        "comment_perspective",
+        "issueId",
+        "issue_title",
+        "category",
+        "comment_content"
+    ]
+    available_cols = [col for col in ordered_cols if col in details.columns]
+    details = details[available_cols].sort_values("likedAt", ascending=False)
+    
+    return details
+
+
 def filter_user_political_scores(
     score_history_df: pd.DataFrame,
     user_id: str,

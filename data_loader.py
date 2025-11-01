@@ -287,6 +287,34 @@ def load_issues() -> pd.DataFrame:
 
 
 @st.cache_data
+def load_issue_comments() -> pd.DataFrame:
+    """
+    Load issue comments from prod.issueComments.json.
+    
+    Returns:
+        DataFrame with issue comment information
+    """
+    try:
+        data = load_json_file("prod.issueComments.json")
+        
+        for record in data:
+            if "_id" in record:
+                record["_id"] = parse_mongodb_oid(record["_id"])
+            if "createdAt" in record:
+                record["createdAt"] = parse_mongodb_date(record["createdAt"])
+            if "updatedAt" in record:
+                record["updatedAt"] = parse_mongodb_date(record.get("updatedAt"))
+        
+        df = pd.DataFrame(data)
+        logger.info(f"Loaded {len(df)} issue comments")
+        return df
+    except Exception as e:
+        logger.error(f"Error loading issue comments: {e}")
+        st.error(f"댓글 데이터 로드 중 오류 발생: {e}")
+        return pd.DataFrame()
+
+
+@st.cache_data
 def load_issue_evaluations() -> pd.DataFrame:
     """
     Load issue evaluations from prod.userIssueEvaluations.json.
@@ -337,6 +365,32 @@ def load_user_watch_history() -> pd.DataFrame:
     except Exception as e:
         logger.error(f"Error loading user watch history: {e}")
         st.error(f"시청 기록 데이터 로드 중 오류 발생: {e}")
+        return pd.DataFrame()
+
+
+@st.cache_data
+def load_user_comment_likes() -> pd.DataFrame:
+    """
+    Load user comment likes from prod.userCommentLikes.json.
+    
+    Returns:
+        DataFrame with user comment like information
+    """
+    try:
+        data = load_json_file("prod.userCommentLikes.json")
+        
+        for record in data:
+            if "_id" in record:
+                record["_id"] = parse_mongodb_oid(record["_id"])
+            if "likedAt" in record:
+                record["likedAt"] = parse_mongodb_date(record["likedAt"])
+        
+        df = pd.DataFrame(data)
+        logger.info(f"Loaded {len(df)} user comment likes")
+        return df
+    except Exception as e:
+        logger.error(f"Error loading user comment likes: {e}")
+        st.error(f"댓글 좋아요 데이터 로드 중 오류 발생: {e}")
         return pd.DataFrame()
 
 

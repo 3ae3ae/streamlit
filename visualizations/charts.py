@@ -1415,6 +1415,51 @@ def create_user_evaluation_distribution_chart(
     return apply_chart_theme(fig, "최근 한달 평가 성향 분포")
 
 
+def create_user_comment_like_distribution_chart(
+    perspective_df: pd.DataFrame
+) -> go.Figure:
+    """
+    Create pie chart showing the distribution of liked comments by perspective.
+    
+    Args:
+        perspective_df: DataFrame with columns 'perspective' and 'like_count'
+    
+    Returns:
+        Plotly figure with liked comment perspective distribution
+    """
+    if perspective_df.empty:
+        logger.info("No liked comment data available for user chart")
+        fig = go.Figure()
+        fig.add_annotation(
+            text="최근 한달간 좋아요한 댓글이 없습니다",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16)
+        )
+        return apply_chart_theme(fig, "최근 한달 좋아요한 댓글 성향")
+    
+    data = perspective_df.copy()
+    data["label"] = data["perspective"].map(PERSPECTIVE_LABELS).fillna(data["perspective"])
+    colors = [COLORS.get(p, COLORS["unknown"]) for p in data["perspective"]]
+    
+    fig = go.Figure(data=[go.Pie(
+        labels=data["label"],
+        values=data["like_count"],
+        marker=dict(colors=colors),
+        hole=0.4,
+        hovertemplate="<b>%{label}</b><br>" +
+                      "좋아요 수: %{value}<br>" +
+                      "비율: %{percent}<br>" +
+                      "<extra></extra>",
+        textinfo="label+percent"
+    )])
+    
+    return apply_chart_theme(fig, "최근 한달 좋아요한 댓글 성향")
+
+
 def create_media_perspective_distribution_chart(
     perspective_df: pd.DataFrame
 ) -> go.Figure:
