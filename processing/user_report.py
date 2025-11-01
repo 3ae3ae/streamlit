@@ -575,3 +575,156 @@ def summarize_media_perspectives(
     )
     
     return perspective_summary
+
+
+def summarize_keywords_from_watched_issues(
+    issue_counts: pd.DataFrame,
+    issues_df: pd.DataFrame,
+    min_watch_threshold: int = 1
+) -> pd.DataFrame:
+    """
+    Summarize keyword exposure based on watched issues.
+    
+    Args:
+        issue_counts: DataFrame with per-issue watch counts for the user
+        issues_df: Issues metadata dataframe containing keywords
+        min_watch_threshold: Minimum aggregated watch weight required to keep a keyword
+    
+    Returns:
+        DataFrame with columns:
+            - keyword: Keyword text
+            - watch_total: Sum of watch counts contributed by issues containing the keyword
+            - issue_count: Number of distinct issues containing the keyword
+    """
+    if issue_counts.empty:
+        return pd.DataFrame()
+    
+    if issues_df.empty or "_id" not in issues_df.columns or "keywords" not in issues_df.columns:
+        logger.warning("Issues dataframe missing keyword information; cannot summarize watched keywords")
+        return pd.DataFrame()
+    
+    keyword_meta = issues_df[["_id", "keywords"]].copy()
+    keyword_meta["keywords"] = keyword_meta["keywords"].apply(
+        lambda value: value if isinstance(value, list) else []
+    )
+    
+    merged = issue_counts.merge(keyword_meta, left_on="issueId", right_on="_id", how="left")
+    if merged.empty:
+        return pd.DataFrame()
+    
+    merged = merged.drop(columns=["_id"], errors="ignore")
+    merged["keywords"] = merged["keywords"].apply(
+        lambda value: value if isinstance(value, list) else []
+    )
+    
+    exploded = merged.explode("keywords")
+    if exploded.empty:
+        return pd.DataFrame()
+    
+    def _normalize_keyword(raw_value: object) -> str | None:
+        if not isinstance(raw_value, str):
+            return None
+        cleaned = raw_value.strip()
+        if not cleaned or cleaned.lower() == "nan":
+            return None
+        return cleaned
+    
+    exploded["keyword"] = exploded["keywords"].apply(_normalize_keyword)
+    exploded = exploded.dropna(subset=["keyword"])
+    
+    if exploded.empty:
+        return pd.DataFrame()
+    
+    keyword_summary = (
+        exploded.groupby("keyword")
+        .agg(
+            watch_total=("watch_count", "sum"),
+            issue_count=("issueId", pd.Series.nunique)
+        )
+        .reset_index()
+    )
+    
+    keyword_summary = keyword_summary[keyword_summary["watch_total"] >= min_watch_threshold]
+    if keyword_summary.empty:
+        return pd.DataFrame()
+    
+    keyword_summary["watch_total"] = keyword_summary["watch_total"].astype(int)
+    keyword_summary["issue_count"] = keyword_summary["issue_count"].astype(int)
+    
+    keyword_summary = keyword_summary.sort_values(
+        ["watch_total", "issue_count"],
+        ascending=[False, False]
+    ).reset_index(drop=True)
+    
+    return keyword_summary
+
+
+def summarize_keyword_evaluations_by_perspective(
+    evaluations_df: pd.DataFrame,
+    issues_df: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Aggregate how a user evaluated issues by keyword and perspective.
+    
+    Args:
+        evaluations_df: Filtered evaluations dataframe for the user
+        issues_df: Issues metadata dataframe containing keywords
+    
+    Returns:
+        DataFrame with columns:
+            - keyword
+            - perspective
+            - evaluation_count
+    """
+    if evaluations_df.empty:
+        return pd.DataFrame()
+    
+    if issues_df.empty or "_id" not in issues_df.columns or "keywords" not in issues_df.columns:
+        logger.warning("Issues dataframe missing keyword information; cannot summarize keyword evaluations")
+        return pd.DataFrame()
+    
+    keyword_meta = issues_df[["_id", "keywords"]].copy()
+    keyword_meta["keywords"] = keyword_meta["keywords"].apply(
+        lambda value: value if isinstance(value, list) else []
+    )
+    
+    merged = evaluations_df.merge(keyword_meta, left_on="issueId", right_on="_id", how="left")
+    if merged.empty:
+        return pd.DataFrame()
+    
+    merged["keywords"] = merged["keywords"].apply(
+        lambda value: value if isinstance(value, list) else []
+    )
+    
+    exploded = merged.explode("keywords")
+    if exploded.empty:
+        return pd.DataFrame()
+    
+    def _normalize_keyword(raw_value: object) -> str | None:
+        if not isinstance(raw_value, str):
+            return None
+        cleaned = raw_value.strip()
+        if not cleaned or cleaned.lower() == "nan":
+            return None
+        return cleaned
+    
+    exploded["keyword"] = exploded["keywords"].apply(_normalize_keyword)
+    exploded = exploded.dropna(subset=["keyword"])
+    
+    if "perspective" not in exploded.columns:
+        exploded["perspective"] = "unknown"
+    exploded["perspective"] = exploded["perspective"].fillna("unknown")
+    
+    if exploded.empty:
+        return pd.DataFrame()
+    
+    keyword_eval = (
+        exploded.groupby(["keyword", "perspective"])
+        .size()
+        .reset_index(name="evaluation_count")
+        .sort_values(["evaluation_count", "keyword"], ascending=[False, True])
+        .reset_index(drop=True)
+    )
+    
+    keyword_eval["evaluation_count"] = keyword_eval["evaluation_count"].astype(int)
+    return keyword_eval

@@ -129,6 +129,84 @@ def create_topic_wordcloud(
         return None
 
 
+def create_keyword_wordcloud(
+    keyword_df: pd.DataFrame,
+    word_column: str = "keyword",
+    value_column: str = "watch_total",
+    max_words: int = 80,
+    width: int = 800,
+    height: int = 400,
+    background_color: str = "white",
+    colormap: str = "viridis"
+) -> Optional[Image.Image]:
+    """
+    Generate a word cloud from keyword frequency data.
+    
+    Args:
+        keyword_df: DataFrame containing keyword frequencies
+        word_column: Column name containing keyword text
+        value_column: Column name containing numeric weight
+        max_words: Maximum number of keywords to render
+        width: Width of the resulting image
+        height: Height of the resulting image
+        background_color: Background color for the word cloud
+        colormap: Matplotlib colormap for word colors
+    
+    Returns:
+        PIL Image object with the word cloud, or None if generation fails
+    """
+    if keyword_df.empty:
+        logger.warning("Empty keyword dataframe provided; cannot generate word cloud")
+        return None
+    
+    if word_column not in keyword_df.columns or value_column not in keyword_df.columns:
+        logger.warning("Keyword dataframe missing required columns for word cloud generation")
+        return None
+    
+    filtered = keyword_df[[word_column, value_column]].dropna()
+    if filtered.empty:
+        logger.warning("Keyword dataframe has no valid entries after dropping NaNs")
+        return None
+    
+    filtered = filtered[filtered[value_column] > 0]
+    if filtered.empty:
+        logger.warning("Keyword dataframe has no positive weights for word cloud generation")
+        return None
+    
+    filtered = filtered.sort_values(value_column, ascending=False).head(max_words)
+    
+    frequencies = {
+        str(row[word_column]): float(row[value_column])
+        for _, row in filtered.iterrows()
+        if str(row[word_column]).strip()
+    }
+    
+    if not frequencies:
+        logger.warning("No keyword frequencies available after processing")
+        return None
+    
+    try:
+        font_path = _get_korean_font_path()
+        
+        wc_params = {
+            "width": width,
+            "height": height,
+            "background_color": background_color,
+            "colormap": colormap,
+            "max_words": max_words,
+            "prefer_horizontal": 0.7,
+            "margin": 10
+        }
+        if font_path:
+            wc_params["font_path"] = font_path
+        
+        wordcloud = WordCloud(**wc_params).generate_from_frequencies(frequencies)
+        return wordcloud.to_image()
+    except Exception as e:
+        logger.error(f"Error generating keyword word cloud: {e}", exc_info=True)
+        return None
+
+
 def _get_korean_font_path() -> Optional[str]:
     """
     Attempt to find a Korean-compatible font on the system.

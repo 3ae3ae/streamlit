@@ -1370,6 +1370,222 @@ def create_user_watch_daily_chart(
     return fig
 
 
+def create_keyword_frequency_bar_chart(
+    keyword_df: pd.DataFrame,
+    top_n: int = 15
+) -> go.Figure:
+    """
+    Create a horizontal bar chart showing the most frequently watched keywords.
+    
+    Args:
+        keyword_df: DataFrame with columns 'keyword' and 'watch_total'
+        top_n: Number of top keywords to display
+    
+    Returns:
+        Plotly figure with horizontal bar chart
+    """
+    if keyword_df.empty or "keyword" not in keyword_df.columns or "watch_total" not in keyword_df.columns:
+        logger.warning("Keyword dataframe missing required columns for frequency chart")
+        fig = go.Figure()
+        fig.add_annotation(
+            text="키워드 데이터를 찾을 수 없습니다",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16)
+        )
+        return apply_chart_theme(fig, "자주 본 이슈 키워드")
+    
+    top_keywords = keyword_df.copy().head(top_n)
+    if top_keywords.empty:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="표시할 키워드가 없습니다",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16)
+        )
+        return apply_chart_theme(fig, "자주 본 이슈 키워드")
+    
+    top_keywords = top_keywords.sort_values("watch_total", ascending=True)
+    top_keywords["watch_total_display"] = top_keywords["watch_total"].map(lambda value: f"{value:,}")
+    
+    fig = px.bar(
+        top_keywords,
+        x="watch_total",
+        y="keyword",
+        orientation="h",
+        text="watch_total_display",
+        color_discrete_sequence=["#4DABF7"]
+    )
+    
+    fig.update_traces(
+        hovertemplate="<b>%{y}</b><br>시청 기여: %{x:,}회<extra></extra>",
+        textposition="outside"
+    )
+    
+    fig.update_layout(
+        xaxis_title="시청 기여 (회)",
+        yaxis_title="키워드",
+        bargap=0.3,
+        height=max(320, 40 * len(top_keywords))
+    )
+    
+    return apply_chart_theme(fig, "자주 본 이슈 키워드")
+
+
+def create_keyword_perspective_distribution_chart(
+    keyword_eval_df: pd.DataFrame,
+    top_n: int = 10
+) -> go.Figure:
+    """
+    Create a refined 100% stacked bar chart for keyword evaluation perspectives.
+    
+    Args:
+        keyword_eval_df: DataFrame with columns 'keyword', 'perspective', 'evaluation_count'
+        top_n: Number of keywords to include based on total evaluation count
+    
+    Returns:
+        Plotly figure with a polished stacked visualization
+    """
+    required_cols = {"keyword", "perspective", "evaluation_count"}
+    if keyword_eval_df.empty or not required_cols.issubset(keyword_eval_df.columns):
+        logger.warning("Keyword evaluation dataframe missing required columns for perspective chart")
+        fig = go.Figure()
+        fig.add_annotation(
+            text="키워드 평가 데이터를 찾을 수 없습니다",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16)
+        )
+        return apply_chart_theme(fig, "키워드별 평가 성향")
+    
+    totals = (
+        keyword_eval_df.groupby("keyword")["evaluation_count"]
+        .sum()
+        .sort_values(ascending=False)
+        .head(top_n)
+    )
+    
+    if totals.empty:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="표시할 키워드가 없습니다",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16)
+        )
+        return apply_chart_theme(fig, "키워드별 평가 성향")
+    
+    filtered = keyword_eval_df[keyword_eval_df["keyword"].isin(totals.index)].copy()
+    filtered["total_count"] = filtered["keyword"].map(totals)
+    filtered = filtered[filtered["total_count"] > 0]
+    if filtered.empty:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="표시할 키워드가 없습니다",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=16)
+        )
+        return apply_chart_theme(fig, "키워드별 평가 성향")
+    
+    filtered["perspective"] = filtered["perspective"].fillna("unknown")
+    filtered["perspective_label"] = filtered["perspective"].map(PERSPECTIVE_LABELS).fillna(filtered["perspective"])
+    filtered["percentage"] = (filtered["evaluation_count"] / filtered["total_count"]) * 100
+    filtered["percentage"] = filtered["percentage"].fillna(0)
+    
+    keyword_order = totals.index.tolist()
+    display_order = list(reversed(keyword_order))
+    filtered["keyword"] = pd.Categorical(filtered["keyword"], categories=display_order, ordered=True)
+    filtered = filtered.sort_values(["keyword", "perspective"])
+    
+    fig = go.Figure()
+    perspective_sequence = [
+        "left",
+        "center_left",
+        "center",
+        "center_right",
+        "right",
+        "unknown"
+    ]
+    
+    for perspective_key in perspective_sequence:
+        subset = filtered[filtered["perspective"] == perspective_key]
+        if subset.empty:
+            continue
+        
+        label = PERSPECTIVE_LABELS.get(perspective_key, perspective_key)
+        color = COLORS.get(perspective_key, COLORS["unknown"])
+        text_values = subset["percentage"].map(lambda value: f"{value:.0f}%" if value >= 10 else "")
+        customdata = subset[["evaluation_count", "percentage", "total_count"]].to_numpy()
+        
+        fig.add_trace(go.Bar(
+            x=subset["percentage"],
+            y=subset["keyword"].astype(str),
+            orientation="h",
+            name=label,
+            marker=dict(color=color, line=dict(width=0.2, color="rgba(0,0,0,0.08)")),
+            text=text_values,
+            textposition="inside",
+            insidetextanchor="middle",
+            textfont=dict(color="#F8F9FA", size=11),
+            hovertemplate="<b>%{y}</b><br>"
+                          f"{label}: "+"%{customdata[0]:,}회<br>"
+                          "비중: %{customdata[1]:.1f}%<br>"
+                          "총 평가 수: %{customdata[2]:,}회"
+                          "<extra></extra>",
+            customdata=customdata,
+            width=0.6
+        ))
+    
+    totals_df = totals.reset_index()
+    totals_df.columns = ["keyword", "total_count"]
+    totals_df["keyword"] = pd.Categorical(totals_df["keyword"], categories=display_order, ordered=True)
+    totals_df = totals_df.sort_values("keyword")
+    
+    fig.add_trace(go.Scatter(
+        x=[102] * len(totals_df),
+        y=totals_df["keyword"].astype(str),
+        mode="text",
+        text=[f"{value:,}회" for value in totals_df["total_count"]],
+        textfont=dict(color="#495057", size=11),
+        textposition="middle right",
+        showlegend=False,
+        hoverinfo="skip"
+    ))
+    
+    fig.update_layout(
+        xaxis_title="평가 비중 (%)",
+        yaxis_title=None,
+        barmode="stack",
+        bargap=0.12,
+        bargroupgap=0.04,
+        legend=dict(title="평가 성향"),
+        height=max(360, 55 * len(totals)),
+        margin=dict(l=110, r=70, t=60, b=40)
+    )
+    
+    fig.update_xaxes(range=[0, 105], dtick=10, showgrid=True, griddash="dot")
+    fig.update_yaxes(categoryorder="array", categoryarray=display_order)
+    
+    return apply_chart_theme(fig, "키워드별 평가 성향")
+
+
 def create_user_evaluation_distribution_chart(
     perspective_df: pd.DataFrame
 ) -> go.Figure:

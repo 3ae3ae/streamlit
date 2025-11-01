@@ -19,7 +19,6 @@ from data_loader import (
     load_issue_evaluations,
     load_issues,
     load_media_sources,
-    load_political_score_history,
     load_user_comment_likes,
     load_user_watch_history
 )
@@ -32,20 +31,23 @@ from processing.user_report import (
     count_watch_by_day,
     filter_user_comment_likes,
     filter_user_issue_evaluations,
-    filter_user_political_scores,
     get_user_recent_watch_history,
+    summarize_keyword_evaluations_by_perspective,
+    summarize_keywords_from_watched_issues,
     summarize_media_perspectives
 )
 from visualizations.charts import (
     CATEGORY_LABELS,
     PERSPECTIVE_LABELS,
+    create_keyword_frequency_bar_chart,
+    create_keyword_perspective_distribution_chart,
     create_media_perspective_distribution_chart,
     create_user_comment_like_distribution_chart,
     create_user_evaluation_distribution_chart,
-    create_user_watch_daily_chart,
-    create_user_political_journey_chart,
-    create_user_watch_category_bar_chart
+    create_user_watch_category_bar_chart,
+    create_user_watch_daily_chart
 )
+from visualizations.wordcloud import create_keyword_wordcloud
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +124,6 @@ def show():
         watch_df = load_user_watch_history()
         evaluation_df = load_issue_evaluations()
         comment_likes_df = load_user_comment_likes()
-        score_history_df = load_political_score_history()
         issues_df = load_issues()
         comments_df = load_issue_comments()
         media_df = load_media_sources()
@@ -240,17 +241,18 @@ def show():
         issues_df=issues_df
     )
     
-    user_score_recent = filter_user_political_scores(
-        score_history_df,
-        user_id=user_id,
-        days=RECENT_WINDOW_DAYS,
-        reference_date=reference_date
-    )
-    
     media_perspective = summarize_media_perspectives(
         issue_counts=issue_counts,
         issues_df=issues_df,
         media_df=media_df
+    )
+    keyword_watch_summary = summarize_keywords_from_watched_issues(
+        issue_counts=issue_counts,
+        issues_df=issues_df
+    )
+    keyword_eval_summary = summarize_keyword_evaluations_by_perspective(
+        user_evaluations,
+        issues_df=issues_df
     )
     
     unique_issues = int(user_watch_recent["issueId"].nunique())
@@ -301,12 +303,88 @@ def show():
     daily_watch_fig = create_user_watch_daily_chart(daily_counts)
     st.plotly_chart(daily_watch_fig, use_container_width=True)
     
-    st.subheader("정치 성향 점수 변화")
-    if user_score_recent.empty:
-        st.info("최근 한달간 업데이트된 정치 성향 점수가 없습니다.")
+    st.subheader("자주 등장한 이슈 키워드")
+    if keyword_watch_summary.empty:
+        st.info("최근 본 이슈에서 키워드를 찾을 수 없습니다.")
     else:
-        score_fig = create_user_political_journey_chart(user_score_recent, user_id)
-        st.plotly_chart(score_fig, use_container_width=True)
+        keyword_fig = create_keyword_frequency_bar_chart(keyword_watch_summary, top_n=15)
+        st.plotly_chart(keyword_fig, use_container_width=True)
+        
+        with st.expander("키워드 노출 상세"):
+            keyword_table = keyword_watch_summary.head(20).copy()
+            keyword_table = keyword_table.rename(columns={
+                "keyword": "키워드",
+                "watch_total": "시청 기여 (회)",
+                "issue_count": "관련 이슈 수"
+            })
+            keyword_table["시청 기여 (회)"] = keyword_table["시청 기여 (회)"].map("{:,}".format)
+            keyword_table["관련 이슈 수"] = keyword_table["관련 이슈 수"].map("{:,}".format)
+            st.dataframe(keyword_table, use_container_width=True, hide_index=True)
+    
+    st.subheader("키워드별 평가 성향")
+    if keyword_eval_summary.empty:
+        st.info("최근 남긴 평가에서 키워드 정보를 찾을 수 없습니다.")
+    else:
+        keyword_eval_fig = create_keyword_perspective_distribution_chart(keyword_eval_summary, top_n=10)
+        st.plotly_chart(keyword_eval_fig, use_container_width=True)
+        
+        totals = (
+            keyword_eval_summary.groupby("keyword")["evaluation_count"]
+            .sum()
+            .sort_values(ascending=False)
+        )
+        top_keywords = totals.head(10)
+        if top_keywords.empty:
+            st.info("평가에 사용된 키워드를 표로 요약할 수 없습니다.")
+        else:
+            pivot_source = keyword_eval_summary[
+                keyword_eval_summary["keyword"].isin(top_keywords.index)
+            ].copy()
+            pivot_source["perspective_label"] = pivot_source["perspective"].map(PERSPECTIVE_LABELS).fillna(pivot_source["perspective"])
+            
+            perspective_order = [
+                PERSPECTIVE_LABELS.get(key, key)
+                for key in ["left", "center_left", "center", "center_right", "right", "unknown"]
+                if key in PERSPECTIVE_LABELS
+            ]
+            
+            pivot_table = (
+                pivot_source.pivot_table(
+                    index="keyword",
+                    columns="perspective_label",
+                    values="evaluation_count",
+                    aggfunc="sum",
+                    fill_value=0
+                )
+                .reindex(index=top_keywords.index)
+            )
+            pivot_table = pivot_table[[col for col in perspective_order if col in pivot_table.columns]]
+            pivot_table = pivot_table.rename_axis(None, axis=0).rename_axis(None, axis=1)
+            pivot_table = pivot_table.astype(int)
+            
+            with st.expander("평가 성향 상세"):
+                st.dataframe(
+                    pivot_table,
+                    use_container_width=True
+                )
+    
+    st.subheader("최근 시청 키워드 워드클라우드")
+    if keyword_watch_summary.empty:
+        st.info("워드클라우드를 생성할 만큼 키워드가 부족합니다.")
+    else:
+        wordcloud_image = create_keyword_wordcloud(
+            keyword_watch_summary,
+            word_column="keyword",
+            value_column="watch_total",
+            max_words=80,
+            width=1000,
+            height=500,
+            colormap="cool"
+        )
+        if wordcloud_image is None:
+            st.info("워드클라우드를 생성하지 못했습니다. 키워드 데이터를 확인해주세요.")
+        else:
+            st.image(wordcloud_image, use_container_width=True)
     
     st.subheader("시청한 이슈의 언론사 성향 노출")
     media_fig = create_media_perspective_distribution_chart(media_perspective)
