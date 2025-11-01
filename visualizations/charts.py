@@ -14,13 +14,13 @@ import plotly.graph_objects as go
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Color palette for political perspectives (optimized for dark mode)
+# Color palette for political perspectives (progressive → conservative)
 COLORS = {
-    "left": "#FF6B6B",           # Brighter red for left/progressive
-    "center_left": "#FFA94D",    # Brighter orange for center-left
-    "center": "#4DABF7",         # Brighter blue for center
-    "center_right": "#CC5DE8",   # Brighter purple for center-right
-    "right": "#51CF66",          # Brighter green for right/conservative
+    "left": "#3B82F6",           # Vivid blue for progressive
+    "center_left": "#818CF8",    # Soft indigo bridge toward moderate
+    "center": "#A855F7",         # Vibrant purple for moderate
+    "center_right": "#F472B6",   # Magenta transition toward conservative
+    "right": "#EF4444",          # Bright red for conservative
     "unknown": "#ADB5BD"         # Lighter gray for unknown/empty
 }
 
@@ -1625,7 +1625,10 @@ def create_user_evaluation_distribution_chart(
                       "평가 수: %{value}<br>" +
                       "비율: %{percent}<br>" +
                       "<extra></extra>",
-        textinfo="label+percent"
+        textinfo="label+percent",
+        textposition="inside",
+        textfont=dict(color="#FFFFFF"),
+        insidetextfont=dict(color="#FFFFFF")
     )])
     
     return apply_chart_theme(fig, "최근 한달 평가 성향 분포")
@@ -1670,7 +1673,10 @@ def create_user_comment_like_distribution_chart(
                       "좋아요 수: %{value}<br>" +
                       "비율: %{percent}<br>" +
                       "<extra></extra>",
-        textinfo="label+percent"
+        textinfo="label+percent",
+        textposition="inside",
+        textfont=dict(color="#FFFFFF"),
+        insidetextfont=dict(color="#FFFFFF")
     )])
     
     return apply_chart_theme(fig, "최근 한달 좋아요한 댓글 성향")
